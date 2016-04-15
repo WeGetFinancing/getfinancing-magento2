@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @package    Getfinancing_Getfinancing
+ * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
+ * @author	   Yameveo <yameveo@yameveo.com>
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <payment>
+            <getfinancing_gateway>
+                <debug>1</debug>
+                <active>0</active>
+                <model>Getfinancing\Getfinancing\Model\Getfinancing</model>
+                <order_status>pending</order_status>
+                <title>GetFinaning</title>
+                <currency>EUR</currency>
+                <is_gateway>1</is_gateway>
+                <sort_order>1</sort_order>
+            </getfinancing_gateway>
+        </payment>
+    </default>
+</config>

@@ -1,0 +1,28 @@
+<?php
+$form = $block->getForm();
+
+?>
+<div style="text-align: center">
+    <h3><?php echo 'redirecting to Getfinancing... if redirect do not work, please click the following button' ?></h3>
+    <form action="<?php echo  $form['href'] ?>" id="getfinancing_checkout" method="post">
+        <input type="submit" value="Continuar"/>
+    </form>
+</div>
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.2.3.min.js">
+</script>
+
+<script type="text/javascript" src="https://partner.getfinancing.com/libs/1.0/getfinancing.js">
+</script>
+
+<script type="text/javascript">
+    var onComplete = function() {
+          window.location.href='<?php echo $form['ok_url']; ?>';
+    };
+
+    var onAbort = function() {
+        window.location.href='<?php echo $form['nok_url']; ?>';
+    };
+    //$("#btn_submit").hide();
+    new GetFinancing('<?php echo  $form['href'] ?>', onComplete, onAbort);
+</script>

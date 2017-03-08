@@ -85,6 +85,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $postUrl = $this->_pagantis->getUrl('pagantis');
 
         $address = $order->getBillingAddress();
+        $saddress = $order->getShippingAddress();
 
         $currency = $this->_pagantis->getCurrency();
 
@@ -160,9 +161,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
             'last_name'        => $last_name,
             'shipping_address' => array(
                 'street1'  => array_values($address->getStreet())[0],
-                'city'    => $address->getCity(),
-                'state'   => $address->getRegion(),
-                'zipcode' => $address->getPostcode()
+                'city'    => $saddress->getCity(),
+                'state'   => $saddress->getRegion(),
+                'zipcode' => $saddress->getPostcode()
             ),
             'billing_address' => array(
                 'street1'  => array_values($address->getStreet())[0],
@@ -227,7 +228,12 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = "Insert into " . $tablename . "(order_id,merchant_transaction_id) Values ('" . $transactionId . "','".$merchant_loan_id."' )";
+        $sql = sprintf(
+            "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
+            $tablename,
+            $transactionId,
+            $merchant_loan_id
+        );
         $connection->query($sql);
 
 

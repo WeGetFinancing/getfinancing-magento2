@@ -108,11 +108,7 @@ class Notification extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = sprintf(
-            "Select order_id FROM %s WHERE merchant_transaction_id = '%s'",
-            $tablename,
-            $merchant_transaction_id
-        );
+        $sql = $connection->select()->from($tablename, 'order_id')->where('merchant_transaction_id=?', $merchant_transaction_id);
         $order = $connection->fetchRow($sql);
         $orderId = $order['order_id'];
         if($debug){

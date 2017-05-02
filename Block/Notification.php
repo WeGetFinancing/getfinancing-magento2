@@ -54,7 +54,6 @@ class Notification extends \Magento\Framework\View\Element\Template
         \Magento\Framework\App\Http\Context $httpContext,
         \Getfinancing\Getfinancing\Model\Getfinancing $pagantis,
         \Magento\Sales\Model\OrderFactory $orderFactory,
-        \Psr\Log\LoggerInterface $logger,
         OrderSender $orderSender,
 
         array $data = []
@@ -64,7 +63,7 @@ class Notification extends \Magento\Framework\View\Element\Template
         $this->httpContext = $httpContext;
         $this->_pagantis = $pagantis;
         $this->_orderFactory = $orderFactory;
-        $this->_logger = $logger;
+        $this->_logger = $context->getLogger();
         $this->orderSender = $orderSender;
     }
 
@@ -109,7 +108,7 @@ class Notification extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = "Select order_id FROM " . $tablename . " WHERE merchant_transaction_id = '" . $merchant_transaction_id . "'";
+        $sql = $connection->select()->from($tablename, 'order_id')->where('merchant_transaction_id=?', $merchant_transaction_id);
         $order = $connection->fetchRow($sql);
         $orderId = $order['order_id'];
         if($debug){

@@ -234,7 +234,12 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = "Insert into " . $tablename . "(order_id,merchant_transaction_id) Values ('" . $transactionId . "','".$merchant_loan_id."' )";
+        $sql = sprintf(
+            "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
+            $tablename,
+            $transactionId,
+            $merchant_loan_id
+        );
         $connection->query($sql);
 
 

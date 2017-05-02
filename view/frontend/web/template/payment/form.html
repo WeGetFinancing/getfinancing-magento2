@@ -30,10 +30,7 @@
             <div class="primary">
                 <button class="action primary checkout"
                         type="submit"
-                        data-bind="
-                        click: placeOrder,
-                        attr: {title: $t('Place Order')}
-                        ">
+                         data-bind="click: continueToGetFinancing, enable: (getCode() == isChecked())">
                     <span data-bind="i18n: 'Place Order'"></span>
                 </button>
             </div>

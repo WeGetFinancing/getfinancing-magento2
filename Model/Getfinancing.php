@@ -18,7 +18,7 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
     const URL_NOTIFICATION = 'getfinancing/getfinancing/notification';
     const URL_PAGANTIS_PROD = "https://api.getfinancing.com/merchant/";
     const URL_PAGANTIS_STAGE = "https://api-test.getfinancing.com/merchant/";
-    const CURRENCY = 'EUR';
+    const CURRENCY = 'USD';
     const LOCALE = 'EN';
 
     /**

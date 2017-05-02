@@ -182,7 +182,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $username = $this->_pagantis->getUsername();
         $password = $this->_pagantis->getPassword();
 
-	$body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
+        $body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
+
         $header_auth = base64_encode($username . ":" . $password);
 
 
@@ -193,6 +194,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }
 
         $url_to_post .= $this->_pagantis->getMerchantId()  . '/requests';
+
         // clean spaces in the URL.
         $url_to_post = str_replace(' ' ,'', $url_to_post);
 

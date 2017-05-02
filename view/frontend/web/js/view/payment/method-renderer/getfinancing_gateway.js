@@ -32,6 +32,14 @@ define(
             afterPlaceOrder: function () {
                 window.location.replace( url.build( 'getfinancing/getfinancing/redirect/' ) );
             },
+            continueToGetFinancing: function () {
+                this.selectPaymentMethod();
+                window.location.replace(
+                    url.build('/getfinancing/getfinancing/redirect/')
+                );
+
+                return false;
+            }
         });
     }
 );

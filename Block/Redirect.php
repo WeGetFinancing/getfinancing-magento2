@@ -173,13 +173,16 @@ class Redirect extends \Magento\Framework\View\Element\Template
             ),
             'email'            => $order->getCustomerEmail(),
             'merchant_loan_id' => $merchant_loan_id,
-            'version' => '1.9'
+            'version' => '1.9',
+            'success_url' => $urlOk,
+            'failure_url' => $urlKo,
+            'postback_url' => $urlCallback
         );
 
         $username = $this->_pagantis->getUsername();
         $password = $this->_pagantis->getPassword();
 
-        $body_json_data = json_encode($gf_data);
+        $body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
         $header_auth = base64_encode($username . ":" . $password);
 
 
@@ -190,7 +193,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }
 
         $url_to_post .= $this->_pagantis->getMerchantId()  . '/requests';
-
+        $url_to_post = str_replace(' ' ,'', $url_to_post);
         $post_args = array(
             'body' => $body_json_data,
             'timeout' => 60,     // 60 seconds

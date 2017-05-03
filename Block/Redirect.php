@@ -75,7 +75,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $checkout = $this->_checkoutSession;
 
         $order = $this->_checkoutSession->getLastRealOrder();
-        $transactionId = (string)$order->getRealOrderId();
+        $transactionId = (string)$checkout->getRealOrderId();
         $debug = $this->_pagantis->getDebug();
 
         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
@@ -84,14 +84,19 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $postUrl = $this->_pagantis->getUrl('pagantis');
 
-        $address = $order->getBillingAddress();
-        $saddress = $order->getShippingAddress();
+        $address =  $this->_checkoutSession->getQuote()->getBillingAddress();
+        $saddress =  $this->_checkoutSession->getQuote()->getShippingAddress();
 
         $currency = $this->_pagantis->getCurrency();
 
-        $total = floor($order->getGrandTotal());
+        $total = floor($this->_checkoutSession->getQuote()->getGrandTotal());
 
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $cart = $objectManager->get('\Magento\Checkout\Model\Cart');
 
+        $subTotal = $cart->getQuote()->getSubtotal();
+        $grandTotal = $cart->getQuote()->getGrandTotal();
+        $total = $grandTotal;
 
         $form['order_id'] = $transactionId;
         $form['amount'] = $total;
@@ -102,10 +107,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
 
         if(!$order->getCustomerFirstname()) {
-            $billingAddress = $order->getBillingAddress();
-            $fullName = $billingAddress->getFirstname() . ' ' . $billingAddress->getLastname();
-            $first_name = $billingAddress->getFirstname();
-            $last_name = $billingAddress->getLastname();
+            $fullName = $address->getFirstname() . ' ' . $address->getLastname();
+            $first_name = $address->getFirstname();
+            $last_name = $address->getLastname();
         } else {
             $fullName = $order->getCustomerFirstname()  . ' ' . $order->getCustomerLastname();
             $first_name = $order->getCustomerFirstname();
@@ -114,8 +118,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $form['full_name'] = $fullName;
 
-        $form['email'] = $order->getCustomerEmail();
-        $form['dni'] = $order->getCustomerTaxvat();
+        $form['email'] = $this->_checkoutSession->getQuote()->getCustomerEmail();
+        $form['dni'] = $this->_checkoutSession->getQuote()->getCustomerTaxvat();
 
         $form['address']['street'] = !empty($address) ? array_values($address->getStreet())[0] : '';
         $form['address']['city'] = !empty($address) ? $address->getCity() : '';
@@ -125,14 +129,14 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $i = 0;
         $items = array();
 
-        foreach ($order->getAllItems() as $key => $value){
+        foreach ($this->_checkoutSession->getQuote()->getAllItems() as $key => $value){
             $items[$i]['description'] = $value->getName() ? $value->getName() : '';
             $items[$i]['quantity'] = round($value->getQtyOrdered(),0);
             $items[$i]['amount'] = round($value->getRowTotalInclTax(),2);
             $i++;
         }
 
-        $shippingAmount = round($order->getShippingInclTax(),2);
+        $shippingAmount = round($this->_checkoutSession->getQuote()->getShippingInclTax(),2);
         if($shippingAmount) {
             $items[$i]['description'] = "Gastos de envío";
             $items[$i]['quantity'] = "1";
@@ -140,7 +144,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
             $i++;
         }
 
-        $discountAmount = round($order->getBaseDiscountAmount(),2);
+        $discountAmount = round($this->_checkoutSession->getQuote()->getBaseDiscountAmount(),2);
         if($discountAmount) {
             $items[$i]['description'] = "Descuento";
             $items[$i]['quantity'] = "1";
@@ -183,7 +187,6 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $password = $this->_pagantis->getPassword();
 
         $body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
-
         $header_auth = base64_encode($username . ":" . $password);
 
 
@@ -194,10 +197,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }
 
         $url_to_post .= $this->_pagantis->getMerchantId()  . '/requests';
-
-        // clean spaces in the URL.
         $url_to_post = str_replace(' ' ,'', $url_to_post);
-
         $post_args = array(
             'body' => $body_json_data,
             'timeout' => 60,     // 60 seconds
@@ -213,9 +213,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $gf_response = $this->_remote_post( $url_to_post, $post_args );
 
         if($debug){
-            $this->_logger->debug("GF URL: ".var_export($url_to_post, 1));
-            $this->_logger->debug("GF connection : request: ".var_export($post_args,1));
-            $this->_logger->debug("GF connection : request: ".var_export($gf_response,1));
+            $this->_logger->debug("GF connection failure: request: ".var_export($post_args,1));
+            $this->_logger->debug("GF connection response: request: ".var_export($gf_response,1));
         }
         $gf_response = json_decode($gf_response);
         if(isset($gf_response->type) && $gf_response->type == "error"){

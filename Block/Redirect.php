@@ -183,6 +183,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $password = $this->_pagantis->getPassword();
 
         $body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
+
         $header_auth = base64_encode($username . ":" . $password);
 
 
@@ -193,7 +194,10 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }
 
         $url_to_post .= $this->_pagantis->getMerchantId()  . '/requests';
+
+        // clean spaces in the URL.
         $url_to_post = str_replace(' ' ,'', $url_to_post);
+
         $post_args = array(
             'body' => $body_json_data,
             'timeout' => 60,     // 60 seconds
@@ -209,8 +213,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $gf_response = $this->_remote_post( $url_to_post, $post_args );
 
         if($debug){
-            $this->_logger->debug("GF connection failure: request: ".var_export($post_args,1));
-            $this->_logger->debug("GF connection response: request: ".var_export($gf_response,1));
+            $this->_logger->debug("GF URL: ".var_export($url_to_post, 1));
+            $this->_logger->debug("GF connection : request: ".var_export($post_args,1));
+            $this->_logger->debug("GF connection : request: ".var_export($gf_response,1));
         }
         $gf_response = json_decode($gf_response);
         if(isset($gf_response->type) && $gf_response->type == "error"){

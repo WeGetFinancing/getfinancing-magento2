@@ -72,108 +72,97 @@ class Redirect extends \Magento\Framework\View\Element\Template
      */
     protected function prepareBlockData()
     {
-        $checkout = $this->_checkoutSession;
-
-        $order = $this->_checkoutSession->getLastRealOrder();
-        $transactionId = (string)$order->getRealOrderId();
         $debug = $this->_pagantis->getDebug();
+    
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $cart = $objectManager->get('\Magento\Checkout\Model\Cart'); 
+        $orderObj = $objectManager->get('\Magento\Sales\Model\Order\Config');
+   
+        $transactionId = $cart->getQuote()->getId();
+        // retrieve quote items collection
+        $itemsCollection = $cart->getQuote()->getItemsCollection();      
+        // get array of all items what can be display directly
+        $itemsVisible = $cart->getQuote()->getAllVisibleItems();
 
+        $allCartItems = $cart->getQuote()->getAllItems();
+        $cartItems = []; $items = [];
+        
+        foreach($allCartItems as $item) { 
+            // Get all products for send to Get Financing
+            $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$item->getName(),
+                            'quantity'=>(real)$item->getQty(),
+                            'unit_price'=>(real)$item->getPrice(),
+                            'unit_tax'=>(real)$item->getTaxAmount()];
+            // Get all products to save
+            $items[] = ['description'=>$item->getName(),
+                        'quantity'=>$item->getQty(),
+                        'amount'=>$item->getRowTotalInclTax()];
+        }
+
+        $billingAddress = $cart->getQuote()->getBillingAddress();
+        $shippingAddress = $cart->getQuote()->getShippingAddress();
+  
         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
         $urlKo = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ko');
         $urlCallback = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('notification');
 
         $postUrl = $this->_pagantis->getUrl('pagantis');
-
-        $address = $order->getBillingAddress();
-        $saddress = $order->getShippingAddress();
+        
+        $address = $billingAddress->getStreet()[0];
+        $saddress = $shippingAddress->getStreet()[0]; 
 
         $currency = $this->_pagantis->getCurrency();
 
-        $total = floor($order->getGrandTotal());
-
-
+        $total = $shippingAddress->getSubtotal();
 
         $form['order_id'] = $transactionId;
-        $form['amount'] = $total;
+        $form['amount'] = $shippingAddress->getSubtotal();
         $form['currency'] = $currency;
 
         $form['ok_url'] = $urlOk;
         $form['nok_url'] = $urlKo;
 
+        $form['full_name'] = $shippingAddress->getFirstName().' '.$shippingAddress->getLastName();
+        $form['email'] = $cart->getQuote()->getCustomerEmail();
 
-        if(!$order->getCustomerFirstname()) {
-            $billingAddress = $order->getBillingAddress();
-            $fullName = $billingAddress->getFirstname() . ' ' . $billingAddress->getLastname();
-            $first_name = $billingAddress->getFirstname();
-            $last_name = $billingAddress->getLastname();
-        } else {
-            $fullName = $order->getCustomerFirstname()  . ' ' . $order->getCustomerLastname();
-            $first_name = $order->getCustomerFirstname();
-            $last_name = $order->getCustomerLastname();
-        }
+        $form['dni'] = $cart->getQuote()->getCustomerTaxvat();
 
-        $form['full_name'] = $fullName;
-
-        $form['email'] = $order->getCustomerEmail();
-        $form['dni'] = $order->getCustomerTaxvat();
-
-        $form['address']['street'] = !empty($address) ? array_values($address->getStreet())[0] : '';
-        $form['address']['city'] = !empty($address) ? $address->getCity() : '';
-        $form['address']['province'] = !empty($address) ? $address->getRegion() : '';
-        $form['address']['zipcode'] = !empty($address) ? $address->getPostcode() : '';
-
-        $i = 0;
-        $items = array();
-
-        foreach ($order->getAllItems() as $key => $value){
-            $items[$i]['description'] = $value->getName() ? $value->getName() : '';
-            $items[$i]['quantity'] = round($value->getQtyOrdered(),0);
-            $items[$i]['amount'] = round($value->getRowTotalInclTax(),2);
-            $i++;
-        }
-
-        $shippingAmount = round($order->getShippingInclTax(),2);
-        if($shippingAmount) {
-            $items[$i]['description'] = "Gastos de envío";
-            $items[$i]['quantity'] = "1";
-            $items[$i]['amount'] = $shippingAmount;
-            $i++;
-        }
-
-        $discountAmount = round($order->getBaseDiscountAmount(),2);
-        if($discountAmount) {
-            $items[$i]['description'] = "Descuento";
-            $items[$i]['quantity'] = "1";
-            $items[$i]['amount'] = $discountAmount;
-        }
+        $form['address']['street']   = $saddress;
+        $form['address']['city']     = $shippingAddress->getCity();
+        $form['address']['province'] = $shippingAddress->getRegion();
+        $form['address']['zipcode']  = $shippingAddress->getPostcode();
 
         $form['callback_url'] = $urlCallback;
-        $form['phone'] = $address->getTelephone();
-        $form['dob'] = $order->getCustomerDob();
 
-        //$form['secret'] = $secretKey;
+        $form['phone'] = $shippingAddress->getTelephone();
+        $form['dob'] = $cart->getQuote()->getCustomerDob();
+
         $form['post_url'] = $postUrl;
-        $merchant_loan_id = md5(time() . $this->_pagantis->getMerchantId() .$first_name . $total);
+        $merchant_loan_id = md5(time() . $this->_pagantis->getMerchantId().$shippingAddress->getFirstName() . $total);
+        
         $gf_data = array(
+       //     'product_info'     => $transactionId,
+            'first_name'       => $shippingAddress->getFirstName(),
+            'last_name'        => $shippingAddress->getLastName(),
             'amount'           => $total,
-            'product_info'     => $transactionId,
-            'first_name'       => $first_name,
-            'last_name'        => $last_name,
             'shipping_address' => array(
-                'street1'  => array_values($address->getStreet())[0],
-                'city'    => $saddress->getCity(),
-                'state'   => $saddress->getRegion(),
-                'zipcode' => $saddress->getPostcode()
+                'street1'  => $shippingAddress->getStreet()[0],
+                'city'     => $shippingAddress->getCity(),
+                'state'    => $shippingAddress->getRegion(),
+                'zipcode'  => $shippingAddress->getPostcode()
             ),
             'billing_address' => array(
-                'street1'  => array_values($address->getStreet())[0],
-                'city'    => $address->getCity(),
-                'state'   => $address->getRegion(),
-                'zipcode' => $address->getPostcode()
+                'street1'  => $billingAddress->getStreet()[0],
+                'city'     => $billingAddress->getCity(),
+                'state'    => $billingAddress->getRegion(),
+                'zipcode'  => $billingAddress->getPostcode()
             ),
-            'email'            => $order->getCustomerEmail(),
-            'merchant_loan_id' => $merchant_loan_id,
+            'email'            => $shippingAddress->getEmail(),
+            'cart_items'       => $cartItems,
+//            'merchant_loan_id' => $merchant_loan_id,
+            'shipping_amount'  => (real)$shippingAddress->getShippingAmount(),
             'version' => '1.9',
+            'merchant_transaction_id' => $merchant_loan_id,
             'success_url' => $urlOk,
             'failure_url' => $urlKo,
             'postback_url' => $urlCallback
@@ -218,6 +207,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
             $this->_logger->debug("GF connection : request: ".var_export($gf_response,1));
         }
         $gf_response = json_decode($gf_response);
+
+
         if(isset($gf_response->type) && $gf_response->type == "error"){
           if($debug){
             $this->_logger->debug('GF ERROR - redirecting to fail');
@@ -244,13 +235,11 @@ class Redirect extends \Magento\Framework\View\Element\Template
         );
         $connection->query($sql);
 
-
         $this->addData(
             [
             'form' => $form
             ]
         );
-
 
     }
 

@@ -16,7 +16,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
     /**
      * @var \Magento\Checkout\Model\Session
      */
-    protected $_checkoutSession;
+//    protected $_checkoutSession;
 
     /**
      * @var \Magento\Sales\Model\Order\Config
@@ -29,7 +29,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
     protected $httpContext;
 
     protected $_pagantis;
-
+//    protected $_orderFactory;
+    protected $quoteManagement;
+//    protected $_paymentHelper;
 
     /**
      * @param \Magento\Framework\View\Element\Template\Context $context
@@ -43,15 +45,21 @@ class Redirect extends \Magento\Framework\View\Element\Template
         \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Sales\Model\Order\Config $orderConfig,
         \Magento\Framework\App\Http\Context $httpContext,
+        \Magento\Quote\Model\QuoteManagement $quoteManagement,
+        \Magento\Sales\Model\OrderFactory $orderFactory,
         \Getfinancing\Getfinancing\Model\Getfinancing $pagantis,
+        \Magento\Payment\Helper\Data $paymentHelper,
         array $data = []
     ) {
         parent::__construct($context, $data);
-        $this->_checkoutSession = $checkoutSession;
+//        $this->_checkoutSession = $checkoutSession;
         $this->_orderConfig = $orderConfig;
         $this->_isScopePrivate = true;
         $this->httpContext = $httpContext;
+        $this->quoteManagement = $quoteManagement;
+//        $this->_orderFactory = $orderFactory;
         $this->_pagantis = $pagantis;
+//        $this->_paymentHelper = $paymentHelper;
     }
 
     /**
@@ -73,18 +81,19 @@ class Redirect extends \Magento\Framework\View\Element\Template
     protected function prepareBlockData()
     {
         $debug = $this->_pagantis->getDebug();
-    
+
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $cart = $objectManager->get('\Magento\Checkout\Model\Cart'); 
         $orderObj = $objectManager->get('\Magento\Sales\Model\Order\Config');
-   
-        $transactionId = $cart->getQuote()->getId();
-        // retrieve quote items collection
-        $itemsCollection = $cart->getQuote()->getItemsCollection();      
-        // get array of all items what can be display directly
-        $itemsVisible = $cart->getQuote()->getAllVisibleItems();
+        $quote = $cart->getQuote(); 
+        $transactionId = $quote->getId();
 
-        $allCartItems = $cart->getQuote()->getAllItems();
+        // retrieve quote items collection
+        $itemsCollection = $quote->getItemsCollection();      
+        // get array of all items what can be display directly
+        $itemsVisible = $quote->getAllVisibleItems();
+
+        $allCartItems = $quote->getAllItems();
         $cartItems = []; $items = [];
         
         foreach($allCartItems as $item) { 
@@ -99,8 +108,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
                         'amount'=>$item->getRowTotalInclTax()];
         }
 
-        $billingAddress = $cart->getQuote()->getBillingAddress();
-        $shippingAddress = $cart->getQuote()->getShippingAddress();
+        $billingAddress = $quote->getBillingAddress();
+        $shippingAddress = $quote->getShippingAddress();
   
         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
         $urlKo = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ko');
@@ -123,9 +132,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $form['nok_url'] = $urlKo;
 
         $form['full_name'] = $shippingAddress->getFirstName().' '.$shippingAddress->getLastName();
-        $form['email'] = $cart->getQuote()->getCustomerEmail();
+        $form['email'] = $quote->getCustomerEmail();
 
-        $form['dni'] = $cart->getQuote()->getCustomerTaxvat();
+        $form['dni'] = $quote->getCustomerTaxvat();
 
         $form['address']['street']   = $saddress;
         $form['address']['city']     = $shippingAddress->getCity();
@@ -135,7 +144,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $form['callback_url'] = $urlCallback;
 
         $form['phone'] = $shippingAddress->getTelephone();
-        $form['dob'] = $cart->getQuote()->getCustomerDob();
+        $form['dob'] = $quote->getCustomerDob();
 
         $form['post_url'] = $postUrl;
         $merchant_loan_id = md5(time() . $this->_pagantis->getMerchantId().$shippingAddress->getFirstName() . $total);
@@ -220,8 +229,14 @@ class Redirect extends \Magento\Framework\View\Element\Template
           $form['inv_id'] = $gf_response->inv_id;
         }
 
-        //insert hash to order_id
+        /// Paymente Method
+        $quote->getPayment()->setMethod('getfinancing_gateway');
+        $order = $this->quoteManagement->submit($quote);
+        
 
+        $increment_id = $order->getRealOrderId(); // Create the order asociated with this cart
+
+        //insert hash to order_id
         $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
         ->get('Magento\Framework\App\ResourceConnection');
         $connection= $this->_resources->getConnection();
@@ -230,7 +245,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $sql = sprintf(
             "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
             $tablename,
-            $transactionId,
+//            $transactionId,
+            $increment_id,
             $merchant_loan_id
         );
         $connection->query($sql);
@@ -240,7 +256,6 @@ class Redirect extends \Magento\Framework\View\Element\Template
             'form' => $form
             ]
         );
-
     }
 
 

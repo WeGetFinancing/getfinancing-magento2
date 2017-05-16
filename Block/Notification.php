@@ -19,7 +19,7 @@ class Notification extends \Magento\Framework\View\Element\Template
     /**
      * @var \Magento\Checkout\Model\Session
      */
-    protected $_checkoutSession;
+//    protected $_checkoutSession;
 
     /**
      * @var \Magento\Sales\Model\OrderFactory
@@ -40,7 +40,7 @@ class Notification extends \Magento\Framework\View\Element\Template
     protected $orderSender;
 
     protected $_pagantis;
-    protected $_customerRepository;
+//    protected $_customerRepository;
 
     /**
      * @param \Magento\Framework\View\Element\Template\Context $context
@@ -95,7 +95,6 @@ class Notification extends \Magento\Framework\View\Element\Template
         $temp = json_decode($json,true);
         $debug = $this->_pagantis->getDebug();
 
-
         if($debug){
             $this->_logger->debug('GETFINANCING - Starting order update');
         }
@@ -119,7 +118,7 @@ class Notification extends \Magento\Framework\View\Element\Template
         $this->_order = $order;
         $payment = $order->getPayment();
         $this->_payment = $payment;
-
+        
         if ($order->getId()) {
           $this->_logger->debug('GETFINANCING - getID');
             switch ($temp['updates']['status']) {

@@ -119,6 +119,7 @@ class Notification extends \Magento\Framework\View\Element\Template
         $payment = $order->getPayment();
         $this->_payment = $payment;
         
+
         if ($order->getId()) {
           $this->_logger->debug('GETFINANCING - getID');
             switch ($temp['updates']['status']) {
@@ -129,6 +130,18 @@ class Notification extends \Magento\Framework\View\Element\Template
                     $payment->setLastTransId($orderId);
                     $order->save();
                     $this->_processOrder();
+                    break;
+                case 'rejected':
+                    if($debug){
+                        $this->_logger->debug('PAGANTIS - charge.failed');
+                    }
+                    //we only set order as cancelled if it is not completed yet.
+                    if ($order->getStatus() != order::STATE_COMPLETE ){
+                      $payment->setLastTransId($orderId);
+                      $order->setState(order::STATE_CANCELED);
+                      $order->setStatus(order::STATE_CANCELED);
+                      $order->save();
+                    }
                     break;
             }
         }

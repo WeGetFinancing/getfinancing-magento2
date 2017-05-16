@@ -24,6 +24,8 @@ class Success extends \Magento\Framework\App\Action\Action
 
     public function execute()
     {
-        $this->_redirect('checkout/onepage/success');
+        $this->resultPage = $this->resultPageFactory->create();  
+        return $this->resultPage;
+        //$this->_redirect('checkout/onepage/success');
     }
 }

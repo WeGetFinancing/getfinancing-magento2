@@ -108,24 +108,25 @@ class Redirect extends \Magento\Framework\View\Element\Template
                         'amount'=>$item->getRowTotalInclTax()];
         }
 
+
+        $billingAddress = $quote->getBillingAddress();
+        $shippingAddress = $quote->getShippingAddress();
+
         /// Paymente Method
         $quote->getPayment()->setMethod('getfinancing_gateway');
 
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
+        $order = $this->_checkoutSession->getLastRealOrder();
         if(!$customerSession->isLoggedIn()) {
-            $order = $this->_checkoutSession->getLastRealOrder();
             $customerEmail = $order->getCustomerEmail(); 
             $shippingEmail  = $customerEmail;
         } else {
-            $order = $this->quoteManagement->submit($quote);
+            //$order = $this->quoteManagement->submit($quote);
             $customerEmail = $quote->getCustomerEmail();
             $shippingEmail = $shippingAddress->getEmail();
         }
 
-        $billingAddress = $quote->getBillingAddress();
-        $shippingAddress = $quote->getShippingAddress();
-  
-        $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
+         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
         $urlKo = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ko');
         $urlCallback = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('notification');
 
@@ -242,7 +243,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
           $form['href'] = $gf_response->href;
           $form['inv_id'] = $gf_response->inv_id;
         } 
-
+        
         $increment_id = $order->getRealOrderId(); // Create the order asociated with this cart
 
         //insert hash to order_id

@@ -16,7 +16,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
     /**
      * @var \Magento\Checkout\Model\Session
      */
-//    protected $_checkoutSession;
+    protected $_checkoutSession;
 
     /**
      * @var \Magento\Sales\Model\Order\Config
@@ -52,7 +52,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         array $data = []
     ) {
         parent::__construct($context, $data);
-//        $this->_checkoutSession = $checkoutSession;
+        $this->_checkoutSession = $checkoutSession;
         $this->_orderConfig = $orderConfig;
         $this->_isScopePrivate = true;
         $this->httpContext = $httpContext;
@@ -108,6 +108,20 @@ class Redirect extends \Magento\Framework\View\Element\Template
                         'amount'=>$item->getRowTotalInclTax()];
         }
 
+        /// Paymente Method
+        $quote->getPayment()->setMethod('getfinancing_gateway');
+
+        $customerSession = $objectManager->get('Magento\Customer\Model\Session');
+        if(!$customerSession->isLoggedIn()) {
+            $order = $this->_checkoutSession->getLastRealOrder();
+            $customerEmail = $order->getCustomerEmail(); 
+            $shippingEmail  = $customerEmail;
+        } else {
+            $order = $this->quoteManagement->submit($quote);
+            $customerEmail = $quote->getCustomerEmail();
+            $shippingEmail = $shippingAddress->getEmail();
+        }
+
         $billingAddress = $quote->getBillingAddress();
         $shippingAddress = $quote->getShippingAddress();
   
@@ -132,7 +146,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $form['nok_url'] = $urlKo;
 
         $form['full_name'] = $shippingAddress->getFirstName().' '.$shippingAddress->getLastName();
-        $form['email'] = $quote->getCustomerEmail();
+        $form['email'] = $customerEmail;
 
         $form['dni'] = $quote->getCustomerTaxvat();
 
@@ -148,7 +162,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $form['post_url'] = $postUrl;
         $merchant_loan_id = md5(time() . $this->_pagantis->getMerchantId().$shippingAddress->getFirstName() . $total);
-        
+ 
         $gf_data = array(
        //     'product_info'     => $transactionId,
             'first_name'       => $shippingAddress->getFirstName(),
@@ -166,7 +180,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
                 'state'    => $billingAddress->getRegion(),
                 'zipcode'  => $billingAddress->getPostcode()
             ),
-            'email'            => $shippingAddress->getEmail(),
+            'email'            => $shippingEmail,
             'cart_items'       => $cartItems,
 //            'merchant_loan_id' => $merchant_loan_id,
             'shipping_amount'  => (real)$shippingAddress->getShippingAmount(),
@@ -227,12 +241,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }else{
           $form['href'] = $gf_response->href;
           $form['inv_id'] = $gf_response->inv_id;
-        }
-
-        /// Paymente Method
-        $quote->getPayment()->setMethod('getfinancing_gateway');
-        $order = $this->quoteManagement->submit($quote);
-        
+        } 
 
         $increment_id = $order->getRealOrderId(); // Create the order asociated with this cart
 

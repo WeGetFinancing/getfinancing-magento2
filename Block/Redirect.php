@@ -189,6 +189,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
             ),
             'email'            => $shippingEmail,
             'cart_items'       => $cartItems,
+            'phone'        => $billingAddress->getTelephone(),
 //            'merchant_loan_id' => $merchant_loan_id,
             'shipping_amount'  => (real)$shippingAddress->getShippingAmount(),
             'version' => '1.9',

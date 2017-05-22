@@ -174,6 +174,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
             'first_name'       => $shippingAddress->getFirstName(),
             'last_name'        => $shippingAddress->getLastName(),
             'amount'           => $total,
+            'software_name'    => 'Magento 2',
             'shipping_address' => array(
                 'street1'  => $shippingAddress->getStreet()[0],
                 'city'     => $shippingAddress->getCity(),

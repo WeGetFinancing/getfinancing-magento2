@@ -84,18 +84,17 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $cart = $objectManager->get('\Magento\Checkout\Model\Cart'); 
-        $orderObj = $objectManager->get('\Magento\Sales\Model\Order\Config');
         $quote = $cart->getQuote(); 
-        $transactionId = $quote->getId();
 
         // retrieve quote items collection
         $itemsCollection = $quote->getItemsCollection();      
+
         // get array of all items what can be display directly
-        $itemsVisible = $quote->getAllVisibleItems();
+//        $itemsVisible = $quote->getAllVisibleItems();
 
         $allCartItems = $quote->getAllItems();
         $cartItems = []; $items = [];
-        
+ 
         foreach($allCartItems as $item) { 
             // Get all products for send to Get Financing
             $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$item->getName(),
@@ -108,7 +107,6 @@ class Redirect extends \Magento\Framework\View\Element\Template
                         'amount'=>$item->getRowTotalInclTax()];
         }
 
-
         $billingAddress = $quote->getBillingAddress();
         $shippingAddress = $quote->getShippingAddress();
 
@@ -116,17 +114,24 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $quote->getPayment()->setMethod('getfinancing_gateway');
 
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
-        $order = $this->_checkoutSession->getLastRealOrder();
         if(!$customerSession->isLoggedIn()) {
-            $customerEmail = $order->getCustomerEmail(); 
-            $shippingEmail  = $customerEmail;
-        } else {
-            //$order = $this->quoteManagement->submit($quote);
-            $customerEmail = $quote->getCustomerEmail();
-            $shippingEmail = $shippingAddress->getEmail();
-        }
+            $defaultEmail = $_GET['email'];
+            $quote->setCustomerId(null)
+            ->setCustomerEmail($defaultEmail)
+            ->setCustomerIsGuest(true);
+        } 
 
-         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
+        $customerEmail = $quote->getCustomerEmail();
+        $shippingEmail = $shippingAddress->getEmail();
+
+        $order = $this->quoteManagement->submit($quote);
+
+        $transactionId = $order->getRealOrderId(); // Create the order asociated with this cart
+            
+        $customerEmail=($customerEmail)?$customerEmail:$defaultEmail;
+        $shippingEmail=($shippingEmail)?$shippingEmail:$defaultEmail;
+        
+        $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
         $urlKo = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ko');
         $urlCallback = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('notification');
 
@@ -137,10 +142,10 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $currency = $this->_pagantis->getCurrency();
 
-        $total = $shippingAddress->getSubtotal();
+        $total = $shippingAddress->getSubtotal()+$shippingAddress->getShippingAmount();
 
         $form['order_id'] = $transactionId;
-        $form['amount'] = $shippingAddress->getSubtotal();
+        $form['amount'] = $shippingAddress->getSubtotal()+$shippingAddress->getShippingAmount();
         $form['currency'] = $currency;
 
         $form['ok_url'] = $urlOk;
@@ -244,8 +249,6 @@ class Redirect extends \Magento\Framework\View\Element\Template
           $form['inv_id'] = $gf_response->inv_id;
         } 
         
-        $increment_id = $order->getRealOrderId(); // Create the order asociated with this cart
-
         //insert hash to order_id
         $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
         ->get('Magento\Framework\App\ResourceConnection');
@@ -255,8 +258,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $sql = sprintf(
             "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
             $tablename,
-//            $transactionId,
-            $increment_id,
+            $transactionId,
+//            $increment_id,
             $merchant_loan_id
         );
         $connection->query($sql);

@@ -16,6 +16,7 @@ define(
         'use strict';
 
         return Component.extend({
+
             defaults: {
                 template: 'Getfinancing_Getfinancing/payment/form'
             },
@@ -35,7 +36,7 @@ define(
             continueToGetFinancing: function () {
                 this.selectPaymentMethod();
                 window.location.replace(
-                    url.build('/getfinancing/getfinancing/redirect/')
+                    url.build('/getfinancing/getfinancing/redirect/?email='+quote.guestEmail)
                 );
 
                 return false;

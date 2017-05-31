@@ -73,6 +73,19 @@ class Redirect extends \Magento\Framework\View\Element\Template
         return parent::_beforeToHtml();
     }
 
+    public function getProductNameWithOptions ($product) {
+        $productOptions = '';
+        if ($product->getHasOptions()) {
+            $customOptions = $product->getTypeInstance(true)->getOrderOptions($product);
+            foreach ($customOptions['attributes_info'] as $co) {
+                $option = $co['label'].': '.$co['value'];
+                $productOptions.=($productOptions!='')?', ':'';
+                $productOptions.=$option;
+            }
+        }
+        return $productOptions;
+    }
+
     /**
      * Prepares FORM Data to send to gateway
      *
@@ -95,9 +108,13 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $allCartItems = $quote->getAllItems();
         $cartItems = []; $items = [];
  
-        foreach($allCartItems as $item) { 
+        foreach($allCartItems as $item) {
+            $productName = $item->getName();
+            $options = $this->getProductNameWithOptions($item->getProduct());
+            $productName.= ($options!='')?' ('.$options.')':'';
+
             // Get all products for send to Get Financing
-            $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$item->getName(),
+            $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$productName,
                             'quantity'=>(real)$item->getQty(),
                             'unit_price'=>(real)$item->getPrice(),
                             'unit_tax'=>(real)$item->getTaxAmount()];

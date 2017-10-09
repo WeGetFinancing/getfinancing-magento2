@@ -46,17 +46,45 @@ class Notification extends \Magento\Framework\App\Action\Action
 
         $q = $quoteFactory->create()->load($quoteId); // Get the quote to have the order data
         $orderId = $q->GetReservedOrderId();
-        $orderF = $orderFactory->create()->loadByIncrementId($orderId); // Get the order data (if exists)
-        
-        if (empty($orderF->getData())) { // There is no order yet (just items in cart "quote")
-            $orderF->setState($orderStatus)->setStatus($orderStatus); // Set the new status
+        $orderF = $orderFactory->create()->loadByIncrementId($orderId);
+
+        #$orderF = $orderFactory->create()->load($orderId); // Get the order data (if exists)
+        $isEmptyOrder = empty($orderF->getData())?true:false; // Check if order already exists
+
+        if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
             $q->getPayment()->setMethod('getfinancing_gateway');
             $q->save();
+            die ('is empty, create it');
             $quoteManagement = $this->_objectManager->create('\Magento\Quote\Api\CartManagementInterface');
-            $order = $quoteManagement->submit($q); // Create the order  
-        } else {
-            die ('The order already exists, will not change it');
-        }
+            $orderF = $quoteManagement->submit($q); // Create the order  
+        } 
+        $newOrderStatus = $this->mapOrderStatus($orderStatus);
+        $order = $this->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
         die('ok');
+    }
+
+    public function updateOrderStatus ($orderId, $orderStatus) {
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $order = $objectManager->create('\Magento\Sales\Model\Order')->load($orderId);
+        $order->setState($orderStatus)->setStatus($orderStatus);
+        $order->save();
+        return $order;
+    }
+
+    public function mapOrderStatus ($s) {
+        switch (strtolower($s)) {
+            case "preapproved":
+                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
+                break;
+            case "refund":
+                $s = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
+                break;
+            case "approved":
+                $s = \Magento\Sales\Model\Order::STATE_COMPLETE;
+                break;
+            default:
+                $s = \Magento\Sales\Model\Order::STATE_HOLDED;
+        }
+       return $s;
     }
 }

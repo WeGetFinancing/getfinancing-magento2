@@ -97,13 +97,10 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $cart = $objectManager->get('\Magento\Checkout\Model\Cart'); 
-        $quote = $cart->getQuote(); 
+        $quote = $cart->getQuote(); // Get the products in the current cart
 
         // retrieve quote items collection
         $itemsCollection = $quote->getItemsCollection();      
-
-        // get array of all items what can be display directly
-//        $itemsVisible = $quote->getAllVisibleItems();
 
         $allCartItems = $quote->getAllItems();
         $cartItems = []; $items = [];
@@ -131,8 +128,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $quote->getPayment()->setMethod('getfinancing_gateway');
 
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
-        if(!$customerSession->isLoggedIn()) {
-            $defaultEmail = $_GET['email'];
+        if(!$customerSession->isLoggedIn()) { // In the case of a guest checkout
+            $defaultEmail = $_GET['email']; // Receive the email by GET
             $quote->setCustomerId(null)
             ->setCustomerEmail($defaultEmail)
             ->setCustomerIsGuest(true);
@@ -141,13 +138,16 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $customerEmail = $quote->getCustomerEmail();
         $shippingEmail = $shippingAddress->getEmail();
 
-        $order = $this->quoteManagement->submit($quote);
+        #$order = $this->quoteManagement->submit($quote); // clean the cart items and submit the order (we don't want do this until get Getfinancing notification)
 
-        $transactionId = $order->getRealOrderId(); // Create the order asociated with this cart
-            
+        $transactionId = $quote->getEntityId(); // Use quote Id for save transaction data and for notification callback
+
         $customerEmail=($customerEmail)?$customerEmail:$defaultEmail;
         $shippingEmail=($shippingEmail)?$shippingEmail:$defaultEmail;
-        
+
+        $quote->setData('customer_email', $customerEmail); 
+        $quote->save(); // Save/Update the email for the case of guest checkout
+
         $urlOk = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ok');
         $urlKo = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('ko');
         $urlCallback = $this->_storeManager->getStore()->getBaseUrl() . $this->_pagantis->getUrl('notification');
@@ -274,11 +274,10 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = sprintf(
+        $sql = sprintf( // Save the QuoteId related with the transactionId
             "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
             $tablename,
             $transactionId,
-//            $increment_id,
             $merchant_loan_id
         );
         $connection->query($sql);

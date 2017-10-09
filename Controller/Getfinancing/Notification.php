@@ -54,7 +54,6 @@ class Notification extends \Magento\Framework\App\Action\Action
         if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
             $q->getPayment()->setMethod('getfinancing_gateway');
             $q->save();
-            die ('is empty, create it');
             $quoteManagement = $this->_objectManager->create('\Magento\Quote\Api\CartManagementInterface');
             $orderF = $quoteManagement->submit($q); // Create the order  
         } 
@@ -74,16 +73,17 @@ class Notification extends \Magento\Framework\App\Action\Action
     public function mapOrderStatus ($s) {
         switch (strtolower($s)) {
             case "preapproved":
-                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
-                break;
-            case "refund":
                 $s = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
                 break;
+            case "refund":
+            case "rejected":
+                $s = \Magento\Sales\Model\Order::STATE_CANCELED;
+                break;
             case "approved":
-                $s = \Magento\Sales\Model\Order::STATE_COMPLETE;
+                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
                 break;
             default:
-                $s = \Magento\Sales\Model\Order::STATE_HOLDED;
+                die ('error, status doesnt exist');
         }
        return $s;
     }

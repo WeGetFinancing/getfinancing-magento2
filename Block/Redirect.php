@@ -129,7 +129,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
         if(!$customerSession->isLoggedIn()) { // In the case of a guest checkout
-            $defaultEmail = $_GET['email']; // Receive the email by GET
+            #$defaultEmail = $_GET['email']; // Receive the email by GET
+            $defaultEmail = $this->getRequest()->getParam('email');
             $quote->setCustomerId(null)
             ->setCustomerEmail($defaultEmail)
             ->setCustomerIsGuest(true);

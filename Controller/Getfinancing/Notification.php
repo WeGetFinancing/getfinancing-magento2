@@ -59,7 +59,7 @@ class Notification extends \Magento\Framework\App\Action\Action
         } 
         $newOrderStatus = $this->mapOrderStatus($orderStatus);
         $order = $this->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
-        die('ok');
+        $this->getResponse()->setBody('ok');
     }
 
     public function updateOrderStatus ($orderId, $orderStatus) {
@@ -83,7 +83,7 @@ class Notification extends \Magento\Framework\App\Action\Action
                 $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
                 break;
             default:
-                die ('error, status doesnt exist');
+                $this->getResponse()->setBody('error, status doesnt exist');
         }
        return $s;
     }

@@ -110,11 +110,14 @@ class Redirect extends \Magento\Framework\View\Element\Template
             $options = $this->getProductNameWithOptions($item->getProduct());
             $productName.= ($options!='')?' ('.$options.')':'';
 
+            $productUnitTax = ($item->getTaxAmount()>0)?((real)$item->getTaxAmount()/$item->getQty()):0;
             // Get all products for send to Get Financing
-            $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$productName,
-                            'quantity'=>(real)$item->getQty(),
-                            'unit_price'=>(real)$item->getPrice(),
-                            'unit_tax'=>(real)$item->getTaxAmount()];
+            if ($item->getPrice() > 0) { // Products with 0 amount are extra data (like colors, size, etc)
+                $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$productName,
+                                'quantity'=>(real)$item->getQty(),
+                                'unit_price'=>(real)$item->getPrice()+$productUnitTax,
+                                'unit_tax'=>(real)$productUnitTax];
+            }
             // Get all products to save
             $items[] = ['description'=>$item->getName(),
                         'quantity'=>$item->getQty(),

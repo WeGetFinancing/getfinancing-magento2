@@ -104,25 +104,34 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $allCartItems = $quote->getAllItems();
         $cartItems = []; $items = [];
- 
+        $prodsDiscount = 0; // Calc the total discount (by products)
+
         foreach($allCartItems as $item) {
             $productName = $item->getName();
             $options = $this->getProductNameWithOptions($item->getProduct());
             $productName.= ($options!='')?' ('.$options.')':'';
-
             $productUnitTax = ($item->getTaxAmount()>0)?((real)$item->getTaxAmount()/$item->getQty()):0;
             // Get all products for send to Get Financing
+
             if ($item->getPrice() > 0) { // Products with 0 amount are extra data (like colors, size, etc)
-                $cartItems[] = ['sku'=>$item->getSku(),'display_name'=>$productName,
-                                'quantity'=>(real)$item->getQty(),
-                                'unit_price'=>(real)$item->getPrice()+$productUnitTax,
-                                'unit_tax'=>(real)$productUnitTax];
+                if ($item->getDiscountAmount()>0) { // RECALC THIS, IS FAILING
+                    $prodsDiscount += $item->getDiscountAmount(); // get total discount to apply 
+                }
+                $product = ['sku'=>$item->getSku(),'display_name'=>$productName,
+                    'quantity'=>(real)$item->getQty(),
+                    'unit_price'=>((real)$item->getPrice()+$productUnitTax), 
+                    'unit_tax'=>(real)$productUnitTax];
+                $cartItems[] = $product;
             }
+
             // Get all products to save
             $items[] = ['description'=>$item->getName(),
                         'quantity'=>$item->getQty(),
                         'amount'=>$item->getRowTotalInclTax()];
-        }
+
+        } 
+        /* Since the discount is a general value (not by item, check how to send the discount not adding it to the product price). 
+        If add discount to product price with several products we get negative values */
 
         $billingAddress = $quote->getBillingAddress();
         $shippingAddress = $quote->getShippingAddress();

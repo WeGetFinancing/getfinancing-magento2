@@ -31,34 +31,39 @@ class Notification extends \Magento\Framework\App\Action\Action
         $merchantTransactionId = $post->merchant_transaction_id;
         
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $orderFactory = $objectManager->get('\Magento\Sales\Model\OrderFactory');
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $quoteFactory = $objectManager->create('\Magento\Quote\Model\QuoteFactory');
-        
-        $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
-        ->get('Magento\Framework\App\ResourceConnection');
-        $connection= $this->_resources->getConnection();
-        $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = $connection->select()->from($tablename)
-                          ->where('merchant_transaction_id = ?', $merchantTransactionId);
-        $result = $connection->fetchAll($sql);
-        $quoteId = (int)$result[0]['order_id']; // This is the quote ID, with it we get the order (if order exists)
+        $getFinancingModel = $objectManager->get('\Getfinancing\Getfinancing\Model\Getfinancing');
 
-        $q = $quoteFactory->create()->load($quoteId); // Get the quote to have the order data
-        $orderId = $q->GetReservedOrderId();
-        $orderF = $orderFactory->create()->loadByIncrementId($orderId);
+        if ($orderStatus != 'rejected' || $getFinancingModel->getDeleteCancelledOrders() == 0) {
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+            $orderFactory = $objectManager->get('\Magento\Sales\Model\OrderFactory');
+            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+            $quoteFactory = $objectManager->create('\Magento\Quote\Model\QuoteFactory');
+            
+            $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
+            ->get('Magento\Framework\App\ResourceConnection');
+            $connection= $this->_resources->getConnection();
+            $tablename = $this->_resources->getTableName('getfinancing');
+            $sql = $connection->select()->from($tablename)
+                            ->where('merchant_transaction_id = ?', $merchantTransactionId);
+            $result = $connection->fetchAll($sql);
+            $quoteId = (int)$result[0]['order_id']; // This is the quote ID, with it we get the order (if order exists)
 
-        #$orderF = $orderFactory->create()->load($orderId); // Get the order data (if exists)
-        $isEmptyOrder = empty($orderF->getData())?true:false; // Check if order already exists
+            $q = $quoteFactory->create()->load($quoteId); // Get the quote to have the order data
+            $orderId = $q->GetReservedOrderId();
+            $orderF = $orderFactory->create()->loadByIncrementId($orderId);
 
-        if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
-            $q->getPayment()->setMethod('getfinancing_gateway');
-            $q->save();
-            $quoteManagement = $this->_objectManager->create('\Magento\Quote\Api\CartManagementInterface');
-            $orderF = $quoteManagement->submit($q); // Create the order  
-        } 
-        $newOrderStatus = $this->mapOrderStatus($orderStatus);
-        $order = $this->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
+            #$orderF = $orderFactory->create()->load($orderId); // Get the order data (if exists)
+            $isEmptyOrder = empty($orderF->getData())?true:false; // Check if order already exists
+
+            if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
+                $q->getPayment()->setMethod('getfinancing_gateway');
+                $q->save();
+                $quoteManagement = $this->_objectManager->create('\Magento\Quote\Api\CartManagementInterface');
+                $orderF = $quoteManagement->submit($q); // Create the order  
+            }
+            $newOrderStatus = $this->mapOrderStatus($orderStatus);
+            $order = $this->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
+        }
         $this->getResponse()->setBody('ok');
     }
 

@@ -48,8 +48,13 @@ install_gf_plugin: ##@ Install Magento base, Magento sample data and GetFinancin
 mg_change_admin_password: ##@ Example of use: make change_admin_password ADMIN_PASSWORD="admin123"
 	docker exec -it $(MAGENTO_ID) ./bin/magento  admin:use:create --admin-user=$(ADMIN_USR) --admin-password=$(ADMIN_PASSWORD)  --admin-firstname=$(ADMIN_FIRSTNAME) --admin-lastname=$(ADMIN_LASTNAME) --admin-email=$(ADMIN_EMAIL)
 
-login_bash:
+login_bash: ##@ Log into the machine
 	docker exec -it  $(MAGENTO_ID) bash
+
+mg_set_file_permissions: ##@ Fix file permissions in Magento folder
+	docker exec -it $(MAGENTO_ID) find /var/www/html/ -type d -exec chmod 775 {} \; 
+	docker exec -it $(MAGENTO_ID) find /var/www/html/ -type f -exec chmod 664 {} \; 
+	docker exec -it $(MAGENTO_ID) chown www-data:www-data /var/www/html/ -R
 
 mg_exec_cmd: ##@ Example of use: make exec_cmd USR_CMD="ls /tmp"
 	docker exec -it $(MAGENTO_ID) $(USR_CMD)

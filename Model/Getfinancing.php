@@ -56,6 +56,11 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
         return $this->getConfigData('merch_id');
     }
 
+    public function getDeleteCancelledOrders()
+    {
+        return $this->getConfigData('delete_cancelled_orders');
+    }
+
     public function getUsername()
     {
         return $this->getConfigData('username');

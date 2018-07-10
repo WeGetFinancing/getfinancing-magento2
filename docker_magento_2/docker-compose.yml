@@ -1,0 +1,34 @@
+version: '3'
+
+services:
+
+## Magento 
+  magento_2:
+    build:
+      context: ./magento_2/
+      dockerfile: Dockerfile
+    ports: 
+      - "8280:80"
+      - "8283:443"
+    env_file:
+      - ./magento_2/env
+    volumes: 
+      - magento_html:/var/www/
+    links:
+      - mariadb
+    depends_on:
+      - mariadb
+## End of Magento definition
+
+## Mysql Server (for Magento or any other requirement)
+  mariadb:
+    image: mariadb
+    volumes:
+      - db_data:/var/lib/mysql/data
+    env_file:
+      - ./magento_2/env
+## End of Mysql Server
+
+volumes:
+  db_data: # This is for mariadb 
+  magento_html: # This is for magento html directory in /var/www

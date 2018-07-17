@@ -59,8 +59,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 WORKDIR $INSTALL_DIR
 
 ADD crontab /etc/cron.d/magento2-cron
-RUN chmod 0644 /etc/cron.d/magento2-cron \
-    && crontab -u www-data /etc/cron.d/magento2-cron \
+RUN chmod 0644 /etc/cron.d/magento2-cron 
+#    && crontab -u www-data /etc/cron.d/magento2-cron \
 #    /usr/local/bin/install-magento \
 #    && /usr/local/bin/install-sampledata \
 #   /usr/local/bin/install-getfinancing

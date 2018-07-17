@@ -1,5 +1,5 @@
 TARGET="magento_2"
-MAGENTO_ID=$(shell docker ps -a | grep $(TARGET) | cut -d ' ' -f 1)
+MAGENTO_ID=$(shell docker ps -a | grep docker_$(TARGET) | grep -v maria | cut -d ' ' -f 1)
 ADMIN_USR="admin"
 ADMIN_PASSWORD="admin123"
 ADMIN_FIRSTNAME="admin"
@@ -13,14 +13,19 @@ MG_MODE="developer"
 show_img_id: ##@ View Magento Image ID
 	@echo $(MAGENTO_ID)
 
-build:  ##@ Build the image
-	docker build -t $(TARGET)
+env_info: ##@ See info of current variables
+	@echo TARGET=$(TARGET) MAGENTO_ID=$(MAGENTO_ID) ADMIN_USR=$(ADMIN_USR) ADMIN_PASSWORD=$(ADMIN_PASSWORD) 
+	@echo ADMIN_FIRSTNAME=$(ADMIN_FIRSTNAME) ADMIN_LASTNAME=$(ADMIN_LASTNAME) ADMIN_EMAIL=$(ADMIN_EMAIL) MG_BASE_URL=$(MG_BASE_URL) MG_SECURE_URL=$(MG_SECURE_URL)
+	@echo MG_MODE=$(MG_MODE)
 
-build-nc: ##@ Build the image not using cache
-	docker build --no-cache -t $(TARGET)
+build:  ##@ Build the image
+	docker-compose build $(TARGET)
+
+build-nc: ##@ Build the image not using cache MG_SECURE_URL= MG_SECURE_URL= MG_MODE= 
+	docker build --no-cache $(TARGET)
 
 start: ##@ Start the image
-	docker up -d $(TARGET)
+	docker-compose up -d $(TARGET)
 
 stop: ##@ Stop image
 	docker stop $(MAGENTO_ID)
@@ -39,11 +44,11 @@ ps: ##@ Show docker processes
 
 install_gf_plugin: ##@ Install Magento base, Magento sample data and GetFinancing plugni
 	@echo install Magento in $(MAGENTO_ID)
-	docker exec $(MAGENTO_ID) install-getfinancing
+	docker exec $(MAGENTO_ID) install-magento
 	@echo install Magento Sample data in $(MAGENTO_ID)
 	docker exec $(MAGENTO_ID) install-sampledata
-	docker exec $(MAGENTO_ID) install-magento
 	@echo install GF_Plugin in $(MAGENTO_ID)
+	docker exec $(MAGENTO_ID) install-getfinancing
 
 mg_change_admin_password: ##@ Example of use: make change_admin_password ADMIN_PASSWORD="admin123"
 	docker exec -it $(MAGENTO_ID) php ./bin/magento  admin:use:create --admin-user=$(ADMIN_USR) --admin-password=$(ADMIN_PASSWORD)  --admin-firstname=$(ADMIN_FIRSTNAME) --admin-lastname=$(ADMIN_LASTNAME) --admin-email=$(ADMIN_EMAIL)

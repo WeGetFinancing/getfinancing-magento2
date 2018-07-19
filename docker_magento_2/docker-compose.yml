@@ -2,33 +2,31 @@ version: '3'
 
 services:
 
-## Magento 
+## Magento # run only mariadb before create the Magento image
   magento_2:
+    container_name: gf_mage2_http
     build:
       context: ./magento_2/
       dockerfile: Dockerfile
     ports: 
       - "8280:80"
-      - "8283:443"
     env_file:
       - ./magento_2/env
-    volumes: 
-      - magento_html:/var/www/
-    links:
-      - mariadb
     depends_on:
       - mariadb
+    networks:
+      - gf_mage2_net
 ## End of Magento definition
 
-## Mysql Server (for Magento or any other requirement)
+## Mysql Server (for Magento or any other requirement) # docker-compose run mariadb (if need run only mariadb)
   mariadb:
+    container_name: gf_mage2_db
     image: mariadb
-    volumes:
-      - db_data:/var/lib/mysql/data
     env_file:
       - ./magento_2/env
+    networks:
+      - gf_mage2_net
 ## End of Mysql Server
 
-volumes:
-  db_data: # This is for mariadb 
-  magento_html: # This is for magento html directory in /var/www
+networks:
+  gf_mage2_net:

@@ -1,5 +1,6 @@
-TARGET="magento_2"
-MAGENTO_ID=$(shell docker ps -a | grep docker_$(TARGET) | grep -v maria | cut -d ' ' -f 1)
+TARGET="docker_magento_2_magento_2"
+#MAGENTO_ID=$(shell docker ps -a | grep docker_$(TARGET) | grep -v maria | cut -d ' ' -f 1)
+MAGENTO_ID=gf_mage2_http
 ADMIN_USR="admin"
 ADMIN_PASSWORD="admin123"
 ADMIN_FIRSTNAME="admin"
@@ -65,13 +66,13 @@ mg_gf_plugin_upgrade: ##@ Upgrade GetFinancing plugin installation
 	docker exec -it $(MAGENTO_ID) php ./bin/magento setup:upgrade
 
 mg_exec_cmd: ##@ Example of use: make exec_cmd USR_CMD="ls /tmp"
-	docker exec -it $(MAGENTO_ID) $(USR_CMD)
+	docker exec $(MAGENTO_ID) $(USR_CMD)
 
 mg_show_admin_uri: ##@ Show Admin URL
 	docker exec -it $(MAGENTO_ID) php ./bin/magento info:adminuri
 
 mg_show_config: ##@ Show all Magento confing
-	docker exec -it $(MAGENTO_ID) php ./bin/magento  config:show
+	docker exec -it $(MAGENTO_ID) php /var/www/html/bin/magento  config:show
 
 mg_set_baseurl: ##@ Change BASE URL, use MG_BASE_URL="http://magento.local:8280/"
 	docker exec -it $(MAGENTO_ID) php ./bin/magento  setup:store-config:set --base-url="$(MG_BASE_URL)"
@@ -80,7 +81,8 @@ mg_set_secure_baseurl: ##@ change SECURE URL, use MG_SECURE_URL="https://magento
 	docker exec -it $(MAGENTO_ID) php ./bin/magento  setup:store-config:set --base-url-secure="$(MG_SECURE_URL)"
 
 mg_flush_cache: ##@ Delete cache
-	docker exec -it $(MAGENTO_ID) php ./bin/magento  cache:flush
+	docker exec -it $(MAGENTO_ID) php /var/www/html/bin/magento  cache:clean
+	docker exec -it $(MAGENTO_ID) php /var/www/html/bin/magento  cache:flush
 
 mg_set_mode: ##@ change modes between developer and production
 	docker exec -it $(MAGENTO_ID) php ./bin/magento deploy:mode:set $(MG_MODE)

@@ -1,4 +1,4 @@
-MYSQL_HOST=mariadb
+MYSQL_HOST=gf_mage2_db
 MYSQL_ROOT_PASSWORD=myrootpassword
 MYSQL_USER=magento
 MYSQL_PASSWORD=magento

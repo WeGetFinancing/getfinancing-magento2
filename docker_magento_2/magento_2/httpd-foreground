@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+/usr/local/bin/load_db.sh
+
+ln -sf /dev/stdout /var/log/apache2/error.log
+ln -sf /dev/stdout /var/log/apache2/access.log
+
+sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
+
+a2enmod rewrite 
+
+exec /usr/sbin/apachectl -D FOREGROUND

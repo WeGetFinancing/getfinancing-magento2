@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-su www-data <<EOSU
+source /var/www/get-env-vars /var/www/env
 
-ln -s ~/.composer/auth.json /var/www/html/var/composer_home/
+ln -s /var/www/.composer/auth.json /var/www/html/var/composer_home/
+
+chown www-data /var/www/html/var/composer_home/ -R
 
 /var/www/html/bin/magento sampledata:deploy
 
@@ -10,4 +12,3 @@ ln -s ~/.composer/auth.json /var/www/html/var/composer_home/
 
 /var/www/html/bin/magento setup:di:compile
 
-EOSU

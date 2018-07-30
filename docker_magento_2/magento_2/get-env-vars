@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ ! -f $1 ]; then
+    
+    exit 1
+else
+    for i in $(cat $1); do
+        VAR=$(echo $i | cut -d '=' -f 1)
+        VAL=$(echo $i | cut -d '=' -f 2)
+        export $VAR=$VAL
+    done
+fi

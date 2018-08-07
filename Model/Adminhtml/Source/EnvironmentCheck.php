@@ -19,7 +19,7 @@ class EnvironmentCheck implements \Magento\Framework\Option\ArrayInterface
      */
     public function toOptionArray()
     {
-        return [['value' => 1, 'label' => __('Live')], ['value' => 0, 'label' => __('Test')]];
+        return [['value' => 1, 'label' => __('Production')], ['value' => 0, 'label' => __('Sandbox')]];
     }
 
     /**

@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
 
-su www-data <<EOSU
+source /var/www/get-env-vars /var/www/env
 
-/var/www/html/bin/magento setup:install --base-url=$MAGENTO_URL --backend-frontname=$MAGENTO_BACKEND_FRONTNAME --language=$MAGENTO_LANGUAGE --timezone=$MAGENTO_TIMEZONE --currency=$MAGENTO_DEFAULT_CURRENCY --db-host=$MYSQL_HOST --db-name=$MYSQL_DATABASE --db-user=$MYSQL_USER --db-password=$MYSQL_PASSWORD --use-secure=$MAGENTO_USE_SECURE --base-url-secure=$MAGENTO_BASE_URL_SECURE --use-secure-admin=$MAGENTO_USE_SECURE_ADMIN --admin-firstname=$MAGENTO_ADMIN_FIRSTNAME --admin-lastname=$MAGENTO_ADMIN_LASTNAME --admin-email=$MAGENTO_ADMIN_EMAIL --admin-user=$MAGENTO_ADMIN_USERNAME --admin-password=$MAGENTO_ADMIN_PASSWORD
+#Delete $WORKDIR content maybe!?
+# says this: Cannot create cache directory /var/www/.composer//cache/repo/https---packagist.org/, or directory is not writable. Proceeding without cache
 
-EOSU
+chmod g+w $WORKDIR
+
+cd $WORKDIR
+echo " ---------- Download magento from repo... ---------- " 
+su www-data -c "composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition $WORKDIR $MAGENTO_VERSION"
+echo " ---------- Magento downloaded ---------- " 
+
+echo " ---------- Installing getfinancing plugin ---------- "
+composer require getfinancing/getfinancing:dev-master 
+echo " ---------- Magento Plugin installed ---------- "
+
+echo " ---------- Running composer update ---------- "
+composer update
+
+echo " ---------- Running magento install ---------- "
+$WORKDIR/bin/magento setup:install --base-url=$MAGENTO_URL --backend-frontname=$MAGENTO_BACKEND_FRONTNAME --language=$MAGENTO_LANGUAGE --timezone=$MAGENTO_TIMEZONE --currency=$MAGENTO_DEFAULT_CURRENCY --db-host=$MYSQL_HOST --db-name=$MYSQL_DATABASE --db-user=$MYSQL_USER --db-password=$MYSQL_PASSWORD --use-secure=$MAGENTO_USE_SECURE --base-url-secure=$MAGENTO_BASE_URL_SECURE --use-secure-admin=$MAGENTO_USE_SECURE_ADMIN --admin-firstname=$MAGENTO_ADMIN_FIRSTNAME --admin-lastname=$MAGENTO_ADMIN_LASTNAME --admin-email=$MAGENTO_ADMIN_EMAIL --admin-user=$MAGENTO_ADMIN_USERNAME --admin-password=$MAGENTO_ADMIN_PASSWORD
+echo " ---------- Magento installed ---------- "

@@ -66,3 +66,5 @@ Run the containers
 `docker run -d -p 8280:80 --net=gf_mage2_net --name gf_mage2_http getfinancingdockerhub/gf_mage2_http` \
 `docker exec -it gf_mage2_http php ./bin/magento deploy:mode:set developer`
 
+## In Development:
+Use `make override_with_dev` to override app\vendor\getfinancing with getfinancing files from git (in this way you can work with git files and override installed files easily)

@@ -2,6 +2,11 @@
 
 source /var/www/get-env-vars /var/www/env
 
+#Delete $WORKDIR content maybe!?
+# says this: Cannot create cache directory /var/www/.composer//cache/repo/https---packagist.org/, or directory is not writable. Proceeding without cache
+
+chmod g+w $WORKDIR
+
 cd $WORKDIR
 echo " ---------- Download magento from repo... ---------- " 
 su www-data -c "composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition $WORKDIR $MAGENTO_VERSION"

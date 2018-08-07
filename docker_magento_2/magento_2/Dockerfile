@@ -12,7 +12,7 @@ WORKDIR $WORKDIR
 RUN apt-get update && apt-get install -y apache2 php \
 	php-mbstring php-xml php-zip php-mysql php-bcmath php-gd \
     openssl ca-certificates php-mcrypt php-curl php-intl \
-    php-soap git curl mysql-client
+    php-soap git curl mysql-client php-xdebug 
 
 # Define composer home, install composer and add auth.json to be able to download Magento 
 ENV COMPOSER_HOME /var/www/.composer/

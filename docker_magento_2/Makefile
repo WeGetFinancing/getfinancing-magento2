@@ -1,4 +1,4 @@
-TARGET="docker_magento_2_magento_2"
+TARGET="magento_2"
 #MAGENTO_ID=$(shell docker ps -a | grep docker_$(TARGET) | grep -v maria | cut -d ' ' -f 1)
 MAGENTO_ID=gf_mage2_http
 ADMIN_USR="admin"
@@ -43,6 +43,9 @@ logsf: ##@ show logs in real time
 ps: ##@ Show docker processes
 	docker ps
 
+override_with_dev: ##@ Override installed files with modified development files (from ../ to app/vendor/getfinancing/getfinancing)
+	@bash -c "./magento_2/sync_in_app.sh"
+
 install_gf_plugin: ##@ Install Magento base, Magento sample data and GetFinancing plugni
 	@echo install Magento in $(MAGENTO_ID)
 	docker exec $(MAGENTO_ID) install-magento
@@ -86,6 +89,15 @@ mg_flush_cache: ##@ Delete cache
 
 mg_set_mode: ##@ change modes between developer and production
 	docker exec -it $(MAGENTO_ID) php ./bin/magento deploy:mode:set $(MG_MODE)
+
+mg_run_test_coverage:
+	@echo "run GF plugin tests coverage into /tmp/report"
+	docker exec -it $(MAGENTO_ID) ./vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist ./vendor/getfinancing/ --coverage-html /tmp/report vendor/vendorname/m2-module-name/
+
+mg_run_tests:
+	@echo "run GF plugin tests"
+	docker exec -it $(MAGENTO_ID) ./vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist ./vendor/getfinancing/ vendor/vendorname/m2-module-name/
+
 
 .DEFAULT_GOAL := help
 

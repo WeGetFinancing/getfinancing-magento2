@@ -1,11 +1,4 @@
 <?xml version="1.0"?>
-<!--
-/**
- * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author	   Yameveo <yameveo@yameveo.com>
- */
--->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <head>
         <title>
@@ -14,7 +7,7 @@
     </head>
     <body>
         <referenceContainer name="content">
-            <block class="Magento\Framework\View\Element\Template" template="Getfinancing_Getfinancing::fail.phtml"/>
+            <block cacheable="false" name="fail_block_view" class="Magento\Framework\View\Element\Template" template="Getfinancing_Getfinancing::fail.phtml"/>
         </referenceContainer>
     </body>
 </page>

@@ -67,4 +67,7 @@ Run the containers
 `docker exec -it gf_mage2_http php ./bin/magento deploy:mode:set developer`
 
 ## In Development:
-Use `make override_with_dev` to override app\vendor\getfinancing with getfinancing files from git (in this way you can work with git files and override installed files easily)
+Use `make override_with_dev` to override app\vendor\getfinancing with getfinancing files from git (in this way you can work with git files and override installed files easily)\
+For development can be useful make a `watch make override_with_dev` to automatically override the plugin installation files.
+
+

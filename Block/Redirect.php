@@ -1,10 +1,9 @@
 <?php
 /**
  * Getfinancing_Getfinancing payment form
-
  * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author	   Yameveo <yameveo@yameveo.com>
+ * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
+ * @author	   Getfinancing <services@getfinancing.com>
  */
 
 namespace Getfinancing\Getfinancing\Block;
@@ -29,9 +28,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
     protected $httpContext;
 
     protected $_pagantis;
-//    protected $_orderFactory;
     protected $quoteManagement;
-//    protected $_paymentHelper;
 
     /**
      * @param \Magento\Framework\View\Element\Template\Context $context
@@ -57,9 +54,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $this->_isScopePrivate = true;
         $this->httpContext = $httpContext;
         $this->quoteManagement = $quoteManagement;
-//        $this->_orderFactory = $orderFactory;
         $this->_pagantis = $pagantis;
-//        $this->_paymentHelper = $paymentHelper;
     }
 
     /**
@@ -97,12 +92,16 @@ class Redirect extends \Magento\Framework\View\Element\Template
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $cart = $objectManager->get('\Magento\Checkout\Model\Cart'); 
+
+        $session = $objectManager->get('\Magento\Framework\Session\SessionManagerInterface');         
+
         $quote = $cart->getQuote(); // Get the products in the current cart
 
         // retrieve quote items collection
         $itemsCollection = $quote->getItemsCollection();      
-
+        
         $allCartItems = $quote->getAllItems();
+        
         $cartItems = []; $items = [];
         $prodsDiscount = 0; // Calc the total discount (by products)
 
@@ -111,7 +110,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
             $options = $this->getProductNameWithOptions($item->getProduct());
             $productName.= ($options!='')?' ('.$options.')':'';
             $productUnitTax = ($item->getTaxAmount()>0)?((real)$item->getTaxAmount()/$item->getQty()):0;
-            // Get all products for send to Get Financing
+            // Get all products to send to Get Financing
 
             if ($item->getPrice() > 0) { // Products with 0 amount are extra data (like colors, size, etc)
                 if ($item->getDiscountAmount()>0) { // RECALC THIS, IS FAILING
@@ -140,23 +139,23 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $quote->getPayment()->setMethod('getfinancing_gateway');
 
         $customerSession = $objectManager->get('Magento\Customer\Model\Session');
-        if(!$customerSession->isLoggedIn()) { // In the case of a guest checkout
-            #$defaultEmail = $_GET['email']; // Receive the email by GET
-            $defaultEmail = $this->getRequest()->getParam('email');
-            $quote->setCustomerId(null)
-            ->setCustomerEmail($defaultEmail)
-            ->setCustomerIsGuest(true);
-        } 
 
-        $customerEmail = $quote->getCustomerEmail();
-        $shippingEmail = $shippingAddress->getEmail();
+        if(!$customerSession->isLoggedIn()) { // In the case of a guest checkout
+            $defaultEmail = $this->getRequest()->getParam('email'); // this was from url
+            $quote->setCustomerId(null)->setCustomerEmail($defaultEmail)
+            ->setCustomerIsGuest(true);
+        }
 
         #$order = $this->quoteManagement->submit($quote); // clean the cart items and submit the order (we don't want do this until get Getfinancing notification)
 
         $transactionId = $quote->getEntityId(); // Use quote Id for save transaction data and for notification callback
 
+        $customerEmail = trim($quote->getCustomerEmail());
         $customerEmail=($customerEmail)?$customerEmail:$defaultEmail;
+        $shippingEmail = trim($shippingAddress->getEmail());
         $shippingEmail=($shippingEmail)?$shippingEmail:$defaultEmail;
+        
+        /* Since Magento 2 don't send us the guestUser, get customer email from GET */
 
         $quote->setData('customer_email', $customerEmail); 
         $quote->save(); // Save/Update the email for the case of guest checkout
@@ -199,8 +198,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $form['post_url'] = $postUrl;
         $merchant_loan_id = md5(time() . $this->_pagantis->getMerchantId().$shippingAddress->getFirstName() . $total);
  
-        $gf_data = array(
-       //     'product_info'     => $transactionId,
+        $gf_data = array( //     'product_info'     => $transactionId,
             'first_name'       => $shippingAddress->getFirstName(),
             'last_name'        => $shippingAddress->getLastName(),
             'amount'           => $total,
@@ -235,15 +233,9 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $body_json_data = json_encode($gf_data, JSON_UNESCAPED_SLASHES);
 
         $header_auth = base64_encode($username . ":" . $password);
-
-
-        if ($this->_pagantis->getEnvironment()) {
-            $url_to_post = 'https://api.getfinancing.com/merchant/';
-        } else {
-            $url_to_post = 'https://api-test.getfinancing.com/merchant/';
-        }
-
-        $url_to_post .= $this->_pagantis->getMerchantId()  . '/requests';
+        
+        // Get Production or Staging URL from GetFinancing Model
+        $url_to_post = $this->_pagantis->getUrl("pagantis") . $this->_pagantis->getMerchantId()  . '/requests';
 
         // clean spaces in the URL.
         $url_to_post = str_replace(' ' ,'', $url_to_post);
@@ -259,8 +251,8 @@ class Redirect extends \Magento\Framework\View\Element\Template
               'Accept' => 'application/json'
              )
         );
-
-        $gf_response = $this->_remote_post( $url_to_post, $post_args );
+        // Create the loan on GetFinancing (using GetFinancing API)
+        $gf_response = $this->_remote_post($url_to_post, $post_args);
 
         if($debug){
             $this->_logger->debug("GF URL: ".var_export($url_to_post, 1));
@@ -269,37 +261,36 @@ class Redirect extends \Magento\Framework\View\Element\Template
         }
         $gf_response = json_decode($gf_response);
 
-
         if(isset($gf_response->type) && $gf_response->type == "error"){
-          if($debug){
-            $this->_logger->debug('GF ERROR - redirecting to fail');
-          }
-            //$this->_redirect('getfinancing/getfinancing/fail');
+            if($debug){
+                $this->_logger->debug('GF ERROR - redirecting to fail');
+            } 
             $form['href'] = $urlKo;
         }else{
-          $form['href'] = $gf_response->href;
-          $form['inv_id'] = $gf_response->inv_id;
+            $form['href'] = $gf_response->href;
+            $form['inv_id'] = $gf_response->inv_id;
         } 
-        
+
         //insert hash to order_id
         $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
         ->get('Magento\Framework\App\ResourceConnection');
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
+
+        // Save order data to show it on success page (in field order_data)
         $sql = sprintf( // Save the QuoteId related with the transactionId
-            "Insert into %s (order_id,merchant_transaction_id) Values ('%s','%s' )",
+            "Insert into %s (order_id,merchant_transaction_id,order_data) Values ('%s','%s', '%s')",
             $tablename,
             $transactionId,
-            $merchant_loan_id
+            $merchant_loan_id,
+            json_encode($form)
         );
         $connection->query($sql);
 
-        $this->addData(
-            [
-            'form' => $form
-            ]
-        );
+        $this->addData(['form' => $form]);
+
+        $session->setGfResponse(json_encode($gf_response));
     }
 
 

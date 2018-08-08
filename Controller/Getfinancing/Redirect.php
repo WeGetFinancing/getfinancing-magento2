@@ -2,10 +2,9 @@
 /**
  * Getfinancing_Getfinancing payment form
  * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author       Yameveo <yameveo@yameveo.com>
+ * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
+ * @author	   Getfinancing <services@getfinancing.com>
  */
-
 
 namespace Getfinancing\Getfinancing\Controller\Getfinancing;
 

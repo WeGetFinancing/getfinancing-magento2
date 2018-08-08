@@ -1,10 +1,9 @@
 <?php
 /**
  * Getfinancing_Getfinancing payment form
-
  * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author	   Yameveo <yameveo@yameveo.com>
+ * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
+ * @author	   Getfinancing <services@getfinancing.com>
  */
 
 namespace Getfinancing\Getfinancing\Model;
@@ -49,6 +48,10 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
     public function getCode()
     {
         return $this->_code;
+    }
+
+    public function getUrlToPost () {
+        
     }
 
     public function getMerchantId()
@@ -100,6 +103,7 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
                 break;
             case 'pagantis':
               if($this->getEnvironment()) {
+                  error_log (self::URL_PAGANTIS_PROD, 3, '/tmp/log');
                 return self::URL_PAGANTIS_PROD;
               }else{
                 return self::URL_PAGANTIS_STAGE;

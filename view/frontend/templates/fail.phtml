@@ -1,1 +1,16 @@
-<p><?php echo 'Your payment with GetFinancing is not complete yet. Please complete your payment with GetFinancing or try again with a different payment method.' ?></p>
+<?php 
+
+$gfData = $this->getData('gf_response');
+if (isset($gfData["error"]) && isset($gfData["reasons"])): ?>
+<div>
+    <strong>Error: <?php 
+        echo $gfData["error"] . " ". implode (", ", $gfData["subjects"]); 
+        ?></strong>
+</div>
+<?php
+endif; 
+?>
+<p>
+    Your payment with GetFinancing is not complete yet. 
+    Please complete your payment with GetFinancing or try again with a different payment method.
+</p>

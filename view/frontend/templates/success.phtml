@@ -2,13 +2,9 @@
 $cartData = $this->getData('cartData');
 $GfForm = $this->getData('GfForm'); ?>
 <h1>
-    Your order is being processed with GetFinancing. 
+    Than you for chossing GetFinancing as payment provider!
 </h1>
-<h2>
-    Please make sure to complete the process with the lender if you haven't already.
-</h2>
 <p>
-
 <?php 
 
 if (isset($cartData[0])): ?>
@@ -19,26 +15,31 @@ if (isset($cartData[0])): ?>
         if (isset($orderData["gf_data"]) && isset($orderData["gf_data"]["first_name"])):
             $clientName = $orderData["gf_data"]["first_name"]; 
         endif; 
-            echo '<div>'. $clientName; 
+            echo '<div><h2>'. $clientName; 
         ?>
-                Thank you for your order.
+                
+                    Your order is on hold while you are in the process of being approved for financing with the lender of your choice.
+                </h2>
+                <h2>
+                    Please wait until this process finishes.
+                </h2>
             </div>
 
         <?php
         if (isset($cartData["merchant_transaction_id"])):
         ?>
-        <div style="padding-top: 10px">
-            Your Merchant Transaction ID: <strong><?php echo $cartData["merchant_transaction_id"]; ?></strong>
-        </div>
+        <span style="padding-top: 10px">
+            Transaction ID: <strong><?php echo $cartData["merchant_transaction_id"]; ?></strong>
+        </span>
         <?php
         endif; 
         if (isset($cartData["order_data"])):
             $totalPrice = 0;
             $orderData = json_decode ($cartData["order_data"], 1);
             if (isset ($orderData["gf_response"]) && isset ($orderData["gf_response"]["inv_id"])): ?>
-            <div>
-                Your GetFinancing order ID: <strong><?php echo $orderData["gf_response"]["inv_id"]; ?></strong>
-            </div>
+            <span>
+                GetFinancing order ID: <strong><?php echo $orderData["gf_response"]["inv_id"]; ?></strong>
+            </span>
             <?php
             endif; 
 

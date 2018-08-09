@@ -10,13 +10,12 @@ namespace Getfinancing\Getfinancing\Model;
 
 class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
 {
-    const PAYMENT_METHOD_PAGANTIS_CODE = 'getfinancing_gateway';
-
+    const PAYMENT_METHOD_GF_CODE = 'getfinancing_gateway';
     const URL_OK = 'getfinancing/getfinancing/success';
     const URL_KO = 'getfinancing/getfinancing/fail';
     const URL_NOTIFICATION = 'getfinancing/getfinancing/notification';
-    const URL_PAGANTIS_PROD = "https://api.getfinancing.com/merchant/";
-    const URL_PAGANTIS_STAGE = "https://api-test.getfinancing.com/merchant/";
+    const URL_GF_PROD = "https://api.getfinancing.com/merchant/";
+    const URL_GF_STAGE = "https://api-test.getfinancing.com/merchant/";
     const CURRENCY = 'USD';
     const LOCALE = 'EN';
 
@@ -25,7 +24,7 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
      *
      * @var string
      */
-    protected $_code = self::PAYMENT_METHOD_PAGANTIS_CODE;
+    protected $_code = self::PAYMENT_METHOD_GF_CODE;
 
     /**
      * Availability option
@@ -48,10 +47,6 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
     public function getCode()
     {
         return $this->_code;
-    }
-
-    public function getUrlToPost () {
-        
     }
 
     public function getMerchantId()
@@ -101,12 +96,11 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
             case 'ko':
                 return self::URL_KO;
                 break;
-            case 'pagantis':
+            case 'getfinancing':
               if($this->getEnvironment()) {
-                  error_log (self::URL_PAGANTIS_PROD, 3, '/tmp/log');
-                return self::URL_PAGANTIS_PROD;
-              }else{
-                return self::URL_PAGANTIS_STAGE;
+                return self::URL_GF_PROD;
+              } else {
+                return self::URL_GF_STAGE;
               }
                 break;
         }
@@ -152,7 +146,25 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
         return $cartData;
     }
 
-    public function getDebug() {
-        return $this->getConfigData('debug');
+    /**
+     * Save order data to show it on success page (in field order_data)
+     * @return void
+     */
+    public function saveOrderData($transactionId, $merchant_loan_id, $order_data) {
+        $connection = $this->getDBConnection();
+        $tablename = $connection->getTableName('getfinancing');
+        $sql = sprintf( // Save the QuoteId related with the transactionId
+            "Insert into %s (order_id,merchant_transaction_id,order_data) Values ('%s','%s', '%s')",
+            $tablename, $transactionId, $merchant_loan_id, $order_data
+        );
+        $connection->query($sql);
+    }
+
+    public function getOrderIdByMerchantTransactionId($merchant_transaction_id) {
+        $connection = $this->getDBConnection();
+        $tablename = $connection->getTableName('getfinancing');
+        $sql = $connection->select()->from($tablename, 'order_id')->where('merchant_transaction_id=?', $merchant_transaction_id);
+        $order = $connection->fetchRow($sql);
+        return $order['order_id'];
     }
 }

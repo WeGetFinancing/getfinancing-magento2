@@ -1,3 +1,5 @@
+<div>
+    <div>Your payment with GetFinancing failed</div>
 <?php 
 
 $gfData = $this->getData('gf_response');
@@ -9,8 +11,19 @@ if (isset($gfData["error"]) && isset($gfData["reasons"])): ?>
 </div>
 <?php
 endif; 
+
+if (isset($gfData["amount"])): ?>
+    <div>
+        Amount: <strong><?php echo $gfData["amount"]; ?></strong>
+    </div>
+<?php
+endif;
+
+if (isset($gfData["inv_id"])): ?>
+    <div>
+        Your GetFinancing order ID: <strong><?php echo $gfData["inv_id"]; ?></strong>
+    </div>
+<?php
+endif;
 ?>
-<p>
-    Your payment with GetFinancing is not complete yet. 
-    Please complete your payment with GetFinancing or try again with a different payment method.
-</p>
+</div>

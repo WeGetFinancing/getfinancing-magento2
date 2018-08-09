@@ -9,22 +9,35 @@
 </p>
 
 <?php 
-
 $cartData = $this->getData('cartData');
 $GfForm = $this->getData('GfForm');
 if (isset($cartData[0])): ?>
-    <pre>
         <?php 
-            print_r($cartData[0]); die();
             $cartData = $cartData[0];
             $orderData = json_decode($cartData["order_data"], 1);
+        if (isset($cartData["merchant_transaction_id"])):
         ?>
         <div>
-            Your GetFinancing order ID: <?php echo $orderData["inv_id"]; ?>
+            Your GetFinancing order ID: <strong><?php echo $cartData["merchant_transaction_id"]; ?></strong>
         </div>
         <?php
-            print_r(json_decode($GfForm, 1));
+        endif; 
+        if (isset($cartData["order_data"])):
+            $orderData = json_decode ($cartData["order_data"], 1);
+            if (isset($orderData["gf_data"]) && isset($orderData["gf_data"]["cart_items"])): ?>
+                <h2>Cart Details: </h2>
+            <?php
+                    foreach ($orderData["gf_data"]["cart_items"] as $i): ?>
+                        <div>SKU: <?php echo $i["sku"]; ?></div>
+                        <div>Item: <?php echo $i["display_name"]." X ".$i["display_name"]; ?></div>
+                        <div>Price: $ <?php echo $i["unit_price"]; ?></div>
+                        <?php if ($i["unit_tax"] > 0): ?>
+                            <div>Product Tax: $ <?php echo $i["unit_tax"]; ?></div>
+                        <?php endif; ?>
+                    <?php
+                    endforeach;
+            endif;
+        endif; 
         ?>
-    </pre>
 <?php 
 endif; 

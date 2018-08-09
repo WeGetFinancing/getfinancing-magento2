@@ -112,6 +112,46 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
         }
     }
 
+    private function getObjectManager () {
+        return \Magento\Framework\App\ObjectManager::getInstance();
+    }
+
+    private function getSessionManager () {
+        $om = $this->getObjectManager ();
+        return $om->get('\Magento\Framework\Session\SessionManagerInterface');
+    }
+
+    private function getDBConnection () {
+        $om = $this->getObjectManager ();
+        return $om->get('Magento\Framework\App\ResourceConnection')->getConnection();
+    }
+
+    public function getSuccessData () {
+        /**
+         * Prepares the data for success page using session values set at checkout (Block\Redirect.php)
+         */
+        $ret = false;
+        $session = $this->getSessionManager();
+        if ($GfResponse = $session->getGfResponse()) {
+            $GfResponse = json_decode($GfResponse, 1);
+            if (isset($GfResponse["inv_id"])) {
+                $cartData = $this->getCartDataByInv_id($GfResponse["inv_id"]);
+                $ret = $cartData;
+            } // Else We don't have the inv_id
+        } // Else We don't have the GetFinancing response in the session
+        return $ret;
+    }
+
+    public function getCartDataByInv_id ($inv_id) {
+        $om = $this->getObjectManager();
+        $connection= $this->getDBConnection();
+        $tablename = $connection->getTableName('getfinancing');
+        $sql = "select * from $tablename where ";
+        $sql.= "order_data like '%".$inv_id."%' ";
+        $cartData = $connection->fetchAll($sql);
+        return $cartData;
+    }
+
     public function getDebug() {
         return $this->getConfigData('debug');
     }

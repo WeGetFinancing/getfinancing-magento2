@@ -1,6 +1,30 @@
-<p><?php 
+<h1>
+    Your order is being processed with GetFinancing. 
+</h1>
+<h2>
+    Please make sure to complete the process with the lender if you haven't already.
+</h2>
+<p>
+    Thank you for your order.
+</p>
 
-//print_r($this->getData('orderData'));
+<?php 
 
-echo 'Thank you for your order.'; 
-?></p>
+$cartData = $this->getData('cartData');
+$GfForm = $this->getData('GfForm');
+if (isset($cartData[0])): ?>
+    <pre>
+        <?php 
+            print_r($cartData[0]); die();
+            $cartData = $cartData[0];
+            $orderData = json_decode($cartData["order_data"], 1);
+        ?>
+        <div>
+            Your GetFinancing order ID: <?php echo $orderData["inv_id"]; ?>
+        </div>
+        <?php
+            print_r(json_decode($GfForm, 1));
+        ?>
+    </pre>
+<?php 
+endif; 

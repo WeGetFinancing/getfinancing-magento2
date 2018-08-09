@@ -1,6 +1,6 @@
 <?php
 /**
- * Getfinancing_Getfinancing payment form
+ * Getfinancing_Getfinancing Success Controller get/manage the info to send to the Success page/view
  * @package    Getfinancing_Getfinancing
  * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
  * @author	   Getfinancing <services@getfinancing.com>
@@ -12,27 +12,26 @@ namespace Getfinancing\Getfinancing\Controller\Getfinancing;
 class Success extends \Magento\Framework\App\Action\Action
 {
     protected $resultPageFactory;
+    protected $_gfModel;
+    protected $_objectManager;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\View\Result\PageFactory $resultPageFactory
     ) {
         $this->resultPageFactory = $resultPageFactory;
+        $this->_objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $this->_gfModel = $this->_objectManager->get('\Getfinancing\Getfinancing\Model\Getfinancing');
         parent::__construct($context);
     }
 
     public function execute()
     {
-        $this->resultPage = $this->resultPageFactory->create();  
+        $resultPage = $this->resultPageFactory->create();  
         // Show the order data on Success page
-        // send $merchantTransactionId to ok url??? as a parameter?
-        /*$connection= $this->_resources->getConnection();
-        $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = $connection->select()->from($tablename)
-                        ->where('merchant_transaction_id = ?', $merchantTransactionId);
-        $result = $connection->fetchAll($sql);
-        $quoteId = (int)$result[0]['order_id'];*/
-        //$this->resultPage->getLayout()->getBlock("success_view")->setData('orderData', json_decode($session->getOrderForm(), 1));
-        return $this->resultPage;
+        $cartData = $this->_gfModel->getSuccessData();
+        $resultPage->getLayout()->getBlock("success_block_view")
+                    ->setData('cartData', $cartData);
+        return $resultPage;
     }
 }

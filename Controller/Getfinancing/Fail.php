@@ -27,7 +27,7 @@ class Fail extends \Magento\Framework\App\Action\Action
          * Create the Fail message, use session to retrieve the reason (saved at Block\Redirect.php file)
         */
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $session = $objectManager->get('\Magento\Framework\Session\SessionManagerInterface');         
+        $session = $objectManager->get('\Magento\Framework\Session\SessionManagerInterface');
         $gf_response = $session->getGfResponse();
         $resultPage = $this->resultPageFactory->create();
         $resultPage->getLayout()->getBlock("fail_block_view")->setData('gf_response', json_decode($gf_response, 1));

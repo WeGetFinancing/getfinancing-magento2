@@ -277,17 +277,17 @@ class Redirect extends \Magento\Framework\View\Element\Template
         $connection= $this->_resources->getConnection();
 
         $tablename = $this->_resources->getTableName('getfinancing');
-
+        
+        $order_data = json_encode(["gf_data"=>$gf_data, "gf_response"=>$gf_response]);
         // Save order data to show it on success page (in field order_data)
         $sql = sprintf( // Save the QuoteId related with the transactionId
             "Insert into %s (order_id,merchant_transaction_id,order_data) Values ('%s','%s', '%s')",
             $tablename,
             $transactionId,
             $merchant_loan_id,
-            json_encode($form)
+            $order_data
         );
         $connection->query($sql);
-
         $this->addData(['form' => $form]);
 
         $session->setGfResponse(json_encode($gf_response));

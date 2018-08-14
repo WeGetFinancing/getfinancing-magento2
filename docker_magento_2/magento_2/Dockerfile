@@ -28,7 +28,7 @@ RUN chmod u+x /usr/local/bin/install-magento /usr/local/bin/install-sampledata \
     /usr/local/bin/check-db-and-install.sh \
 	&& rm /etc/apache2/sites-enabled/000-default.conf 
 COPY 000-default.conf /etc/apache2/sites-enabled/000-default.conf 
-COPY get-env-vars env full_dump.sql mage2_dump.sql /var/www/
+COPY get-env-vars env /var/www/
 
 # Clean unnecesary files, create composer cache folder, set permissions
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 

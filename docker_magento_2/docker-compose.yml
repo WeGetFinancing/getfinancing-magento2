@@ -15,13 +15,13 @@ services:
     volumes: 
       - ./app:/var/www/html/
     depends_on:
-      - mariadb
+      - gf_mage2_db
     networks:
       - gf_mage2_net
 ## End of Magento definition
 
 ## Mysql Server (for Magento or any other requirement) # docker-compose run mariadb (if need run only mariadb)
-  mariadb:
+  gf_mage2_db:
     container_name: gf_mage2_db
     image: mariadb
     env_file:

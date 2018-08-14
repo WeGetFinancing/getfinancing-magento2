@@ -1,6 +1,25 @@
 READ THIS FIRST 
 =
 
+For run the containers getting from Docker hub
+=
+
+Crate a Network for the containers:\
+`docker network create gf_mage2_net` 
+
+Run Database container:\
+`docker run -d -p 3306 --net=gf_mage2_net --name gf_mage2_db getfinancingdockerhub/gf_mage2_db` 
+
+Run http/Magento container:\
+`docker run -d -p 8280:80 --net=gf_mage2_net --name gf_mage2_http getfinancingdockerhub/gf_mage2_http` 
+
+Set developer mode (if needed):\
+`docker exec -it gf_mage2_http php ./bin/magento deploy:mode:set developer`
+
+---
+Next steps are not needed, it's only for create the images with docker-compose:
+=
+
 All this is able to excecute using Makefile
 
 For **local access** use the **MAGENTO_URL** declared in the **env file**: (http://localhost:8280/)

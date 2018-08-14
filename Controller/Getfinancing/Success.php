@@ -22,6 +22,7 @@ class Success extends \Magento\Framework\App\Action\Action
         $this->resultPageFactory = $resultPageFactory;
         $this->_objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $this->_gfModel = $this->_objectManager->get('\Getfinancing\Getfinancing\Model\Getfinancing');
+        //$client = new Raven_Client('https://ab22360f77e34a81a9f444f8b15a38ab@sentry.getfinancing.us/5');
         parent::__construct($context);
     }
 

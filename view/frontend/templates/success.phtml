@@ -60,18 +60,18 @@ if (isset($cartData[0])): ?>
                     <?php
                     endforeach;
             endif; 
-            if ($totalPrice > 0): ?>
-                <div style="padding-top: 10px; ">
-                    Total Price: $ <strong><?php echo $totalPrice; ?></strong>
-                </div>
-            <?php
-            endif;
             if ($orderData["gf_data"]["shipping_amount"]>0): ?>
                 <div>
                     Shipping Amount: $ <strong><?php echo $orderData["gf_data"]["shipping_amount"]; ?></strong>
                 </div>
         <?php
             endif; 
+            if ($totalPrice > 0): ?>
+                <div style="padding-top: 10px; ">
+                    Total Price: $ <strong><?php echo $totalPrice+$orderData["gf_data"]["shipping_amount"]; ?></strong>
+                </div>
+            <?php
+            endif;
         endif; 
         ?>
 <?php 

@@ -8,4 +8,12 @@ sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/se
 
 a2enmod rewrite 
 
+echo " ------------------ CHECK CONNECTION TO DB ---------------"
+/usr/local/bin/check-db-and-install.sh
+
+echo " ------------------ Delete cache ---------------"
+php bin/magento  cache:clean
+php bin/magento  cache:flush
+echo " ------------------ Cache deleted ---------------"
+
 exec /usr/sbin/apachectl -D FOREGROUND

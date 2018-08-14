@@ -235,7 +235,7 @@ class Redirect extends \Magento\Framework\View\Element\Template
         //insert hash to order_id        
         $order_data = json_encode(["gf_data"=>$gf_data, "gf_response"=>$gf_response]);
         $this->_gfModel->saveOrderData($transactionId, $merchant_loan_id, $order_data);
-        $this->addData(['form' => $form]);
+        $this->addData(['form' => $form]); // Send data to the view
         $session->setGfResponse(json_encode($gf_response));
     }
 

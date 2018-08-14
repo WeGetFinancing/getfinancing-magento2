@@ -12,7 +12,7 @@ WORKDIR $WORKDIR
 RUN apt-get update && apt-get install -y apache2 php \
 	php-mbstring php-xml php-zip php-mysql php-bcmath php-gd \
     openssl ca-certificates php-mcrypt php-curl php-intl \
-    php-soap git curl mysql-client php-xdebug 
+    php-soap git curl mysql-client php-xdebug unzip 
 
 # Define composer home, install composer and add auth.json to be able to download Magento 
 ENV COMPOSER_HOME /var/www/.composer/
@@ -22,9 +22,10 @@ COPY ./auth.json /var/www/.composer
 
 # Copy Magento installer, data installer and plugin installer scripts. Set exec permissions
 COPY ./install-magento ./install-sampledata ./install-getfinancing \ 
-    httpd-foreground /usr/local/bin/ 
+    ./httpd-foreground ./check-db-and-install.sh /usr/local/bin/ 
 RUN chmod u+x /usr/local/bin/install-magento /usr/local/bin/install-sampledata \
     /usr/local/bin/install-getfinancing /usr/local/bin/httpd-foreground \
+    /usr/local/bin/check-db-and-install.sh \
 	&& rm /etc/apache2/sites-enabled/000-default.conf 
 COPY 000-default.conf /etc/apache2/sites-enabled/000-default.conf 
 COPY get-env-vars env /var/www/

@@ -66,24 +66,26 @@ class Notification extends \Magento\Framework\View\Element\Template
      *
      * @return string
      */
-    /*
+    
     protected function _beforeToHtml()
     {
         $this->prepareBlockData();
         return parent::_beforeToHtml();
     }
-    */
+    
 
     /**
      * Prepares FORM Data to send to gateway
      *
      * @return void
      */
-    /*
+    
     protected function prepareBlockData()
-    {
+    { // THIS FILE IS NEVER CALLED, we finish in controller with setBody method to show text
+        
         $json = file_get_contents('php://input'); // Receive the postback data
         $temp = json_decode($json,true);
+
         $merchant_transaction_id = $temp['merchant_transaction_id'];
         $orderId = $this->_gfModel->getOrderIdByMerchantTransactionId($merchant_transaction_id);
 
@@ -112,8 +114,8 @@ class Notification extends \Magento\Framework\View\Element\Template
                     break;
             }
         }
-    }*/
-/*
+    }
+
     private function _processOrder() {
         $order = $this->_order;
         $payment = $this->_payment;
@@ -142,7 +144,7 @@ class Notification extends \Magento\Framework\View\Element\Template
             )->save();
          }
     }
-*/
+
     /**
      * Is order visible
      *

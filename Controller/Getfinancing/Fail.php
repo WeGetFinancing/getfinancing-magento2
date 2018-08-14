@@ -18,6 +18,7 @@ class Fail extends \Magento\Framework\App\Action\Action
     )
     {
         $this->resultPageFactory = $resultPageFactory;
+        //$client = new Raven_Client('https://ab22360f77e34a81a9f444f8b15a38ab@sentry.getfinancing.us/5');
         parent::__construct($context);
     }
 

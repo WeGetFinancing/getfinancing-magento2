@@ -167,4 +167,13 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
         $order = $connection->fetchRow($sql);
         return $order['order_id'];
     }
+
+    public function updateOrderStatus ($orderId, $orderStatus) {
+        $om = $this->getObjectManager ();
+        $order = $om->create('\Magento\Sales\Model\Order')->load($orderId);
+        $order->setState($orderStatus)->setStatus($orderStatus);
+        $order->save();
+        return $order;
+    }
+
 }

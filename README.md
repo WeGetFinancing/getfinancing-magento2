@@ -81,3 +81,10 @@ Module notes
 Compatibility
 -------------
  - This module has been tested with magento2
+
+Unit testing
+------------
+- Requires: `apt-get install php-xdebug`
+- Inside docker container:\
+`php7.0 vendor/phpunit/phpunit/phpunit -c vendor/getfinancing/getfinancing/Test/Unit/phpunit.xml.dist --coverage-html ./coverage/`
+

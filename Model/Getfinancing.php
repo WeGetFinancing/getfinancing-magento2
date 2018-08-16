@@ -153,6 +153,7 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
     public function saveOrderData($transactionId, $merchant_loan_id, $order_data) {
         $connection = $this->getDBConnection();
         $tablename = $connection->getTableName('getfinancing');
+        $order_data = preg_replace("/'/", '', $order_data); // Remove single quotes ' before save it in db
         $sql = sprintf( // Save the QuoteId related with the transactionId
             "Insert into %s (order_id,merchant_transaction_id,order_data) Values ('%s','%s', '%s')",
             $tablename, $transactionId, $merchant_loan_id, $order_data

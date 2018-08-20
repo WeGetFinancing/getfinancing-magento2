@@ -14,10 +14,10 @@ if [ !-f ]; then # if auth.json doesn't exist, use terraform variables to create
     echo '"http-basic": {' >> $AUTH_JSON
     echo '"repo.magento.com": {	' >> $AUTH_JSON
     echo '"username": "'  >> $AUTH_JSON
-    echo $MAGE2_API_KEY  >> $AUTH_JSON
+    echo `echo $MAGE2_API_KEY`  >> $AUTH_JSON
     echo '",' >> $AUTH_JSON
     echo '"password": "' >> $AUTH_JSON
-    echo $MAGE2_API_PWD >> $AUTH_JSON
+    echo `echo $MAGE2_API_PWD` >> $AUTH_JSON
     echo '"' >> $AUTH_JSON
     echo '}' >> $AUTH_JSON
     echo '}' >> $AUTH_JSON

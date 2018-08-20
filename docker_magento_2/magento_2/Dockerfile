@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y apache2 php \
 ENV COMPOSER_HOME /var/www/.composer/
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
-COPY ./auth.json /var/www/.composer
+# auth.json will not exist and will not be copied using terraform (because of the keys)
+COPY ./auth.json /var/www/.composer 
 
 # Copy Magento installer, data installer and plugin installer scripts. Set exec permissions
 COPY ./install-magento ./install-sampledata ./install-getfinancing \ 

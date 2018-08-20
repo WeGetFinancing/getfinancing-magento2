@@ -1,10 +1,28 @@
 #!/bin/sh
 set -e
 
+source /var/www/get-env-vars /var/www/env
+
 ln -sf /dev/stdout /var/log/apache2/error.log
 ln -sf /dev/stdout /var/log/apache2/access.log
 
 sed -i 's/ServerSignature On/ServerSignature Off/g' /etc/apache2/conf-enabled/security.conf
+
+AUTH_JSON = '/var/www/.composer/auth.json'
+if [ !-f ]; then # if auth.json doesn't exist, use terraform variables to create it
+    echo '{' > $AUTH_JSON
+    echo '"http-basic": {' >> $AUTH_JSON
+    echo '"repo.magento.com": {	' >> $AUTH_JSON
+    echo '"username": "'  >> $AUTH_JSON
+    echo $MAGE2_API_KEY  >> $AUTH_JSON
+    echo '",' >> $AUTH_JSON
+    echo '"password": "' >> $AUTH_JSON
+    echo $MAGE2_API_PWD >> $AUTH_JSON
+    echo '"' >> $AUTH_JSON
+    echo '}' >> $AUTH_JSON
+    echo '}' >> $AUTH_JSON
+    echo '}' >> $AUTH_JSON
+fi 
 
 a2enmod rewrite 
 

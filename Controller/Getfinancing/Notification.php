@@ -38,7 +38,9 @@ class Notification extends \Magento\Framework\App\Action\Action
         $orderStatus = $post->updates->status;
         $merchantTransactionId = $post->merchant_transaction_id;
 
-        if ($orderStatus != 'rejected' || $this->_gfModel->getDeleteCancelledOrders() == 0) {
+        error_log ("\n ------------- \n: ".print_r('got status', 1), 3, '/tmp/log');
+
+        if ($this->_gfModel->getDeleteCancelledOrders() == 0 || $orderStatus != 'rejected') {
             $orderFactory = $this->om->get('\Magento\Sales\Model\OrderFactory');
             $quoteFactory = $this->om->create('\Magento\Quote\Model\QuoteFactory');
             $quoteId = $this->_gfModel->getOrderIdByMerchantTransactionId($merchantTransactionId);
@@ -47,6 +49,12 @@ class Notification extends \Magento\Framework\App\Action\Action
             $orderF = $orderFactory->create()->loadByIncrementId($this->_orderId);
             #$orderF = $orderFactory->create()->load($this->_orderId); // Get the order data (if exists)
             $isEmptyOrder = empty($orderF->getData())?true:false; // Check if order already exists
+
+            error_log ("\n quoteId: ".$quoteId, 3, '/tmp/log');
+            error_log ("\n this->_order_id: ".$this->_orderId, 3, '/tmp/log');
+            error_log ("\n orderF: ".$orderF->getEntityId(), 3, '/tmp/log');
+            error_log ("\n isEmptyOrder: ".($isEmptyOrder?' empty ':' full order'), 3, '/tmp/log');
+
             if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
                 $q->getPayment()->setMethod('getfinancing_gateway');
                 $q->save();
@@ -54,20 +62,18 @@ class Notification extends \Magento\Framework\App\Action\Action
                 $orderF = $quoteManagement->submit($q); // Create the order  
             }
             $newOrderStatus = $this->mapOrderStatus($orderStatus); // Only manage some statuses
-            $order = $this->_gfModel->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
-            /* TODO: check here if order exists, if process it, if invoice, if sendmail etc */
-            // If new status is not false use it, if no new status, use processing
-            $newStatus = $this->_processOrder();
-            $s = ($newStatus)?$newStatus:\Magento\Sales\Model\Order::STATE_PROCESSING;
-
+            $order = $this->_gfModel->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus);
+            if ($newOrderStatus == \Magento\Sales\Model\Order::STATE_COMPLETE) {
+                $newStatus = $this->_processOrder(); // Notify user by Email and create invoice, only if status is COMPLETED
+            }            
+            $this->getResponse()->setBody('ok'); // We don't wan to call Block, just return text
         }
-        $this->getResponse()->setBody('ok'); // We don't wan to call Block, just return text
+        $this->getResponse()->setBody('cancel, unused status'); // We didn't applly anythinf if we reach this point, so say cancel
     }
 
     public function mapOrderStatus ($s) {
-        error_log ("\n status: \n ".print_r($s, 1), 3, '/tmp/log');
         switch (strtolower($s)) {
-            case "preapproved":
+            case "preapproved": 
                 $s = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
                 break;
             case "refund":
@@ -75,39 +81,29 @@ class Notification extends \Magento\Framework\App\Action\Action
                 $s = \Magento\Sales\Model\Order::STATE_CANCELED;
                 break;
             case "approved":
-                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
+                $s = \Magento\Sales\Model\Order::STATE_COMPLETE;
                 break;
-            default:
-                error_log ("\n unknown status \n" , 3, '/tmp/log');
-                $this->getResponse()->setBody('error, status doesnt exist');
+            default: // If we don't know the status, use processing
+                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
         }
        return $s;
     }
 
     private function _processOrder() { // This method was in \Block\Notification.php but that file is not in use any more
         $order = $this->om->create('\Magento\Sales\Model\Order')->load($this->_orderId);
-        error_log ("\n orderiD: \n". $this->_orderId, 3, '/tmp/log');
         $payment = $order->getPayment();
         $sendMail = $this->_gfModel->getSendEmail();
         $createInvoice = $this->_gfModel->getCreateInvoice();
-        $retStatus = false;
-        if($order->getId() && !$order->canInvoice() && $createInvoice) {
-            error_log ("\n caninvoice \n".$order->canInvoice(), 3, '/tmp/log');
-            error_log ("\n create invoice \n".$createInvoice, 3, '/tmp/log');
-            error_log ("\n return nothing \n", 3, '/tmp/log');
-            // return $retStatus; 
-        } else {
-            error_log ("\n before state complete \n", 3, '/tmp/log');
-            $retStatus = \Magento\Sales\Model\Order::STATE_COMPLETE;
-            error_log ("\n after state complete \n", 3, '/tmp/log');
+        //if($order->getId() && !$order->canInvoice() && $createInvoice) {  
+        if ($createInvoice) {
             $invoice = $order->prepareInvoice();
             $invoice->register();
             $order->addRelatedObject($invoice);
             $order->save();
-            error_log ("\n before save prepare invoice \n", 3, '/tmp/log');
         }
+
         if (!$order->getEmailSent() && $sendMail) {
-            error_log ("\n Send email \n", 3, '/tmp/log');
+            // Only send emails when send emails is set in backoffice configuration and email was not sent yet
             $this->orderSender->send($order);
             $order->addStatusHistoryComment(
                 __('Client notified with order #%1.', $order->getId())
@@ -115,6 +111,6 @@ class Notification extends \Magento\Framework\App\Action\Action
                 true
             )->save();
         }
-        return $retStatus;
+
     }
 }

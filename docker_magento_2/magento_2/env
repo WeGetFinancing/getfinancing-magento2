@@ -19,4 +19,4 @@ MAGENTO_ADMIN_EMAIL=admin@example.com
 MAGENTO_ADMIN_USERNAME=admin
 MAGENTO_ADMIN_PASSWORD=magento_123_password
 
-GIT_BRANCH=feature/rebuild_plugin
+GIT_BRANCH=dev-feature/rebuild_plugin

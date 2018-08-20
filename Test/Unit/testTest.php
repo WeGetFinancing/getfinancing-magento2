@@ -14,6 +14,7 @@ class Aaa extends TestCase
     protected $_objectManager;
     public function setUp() {
         parent::setUp();
+        //$this->customerSessionMock = $this->createMock(\Magento\Customer\Model\Session::class);
         $this->_objectManager = new \Magento\Framework\TestFramework\Unit\Helper\ObjectManager($this);
     }
 
@@ -22,9 +23,17 @@ class Aaa extends TestCase
     }
 
     public function testMethod2() {
-        $page = $this->_objectManager->getObject("\Getfinancing\Getfinancing\Controller\Getfinancing\Success");
+        $model = $this->_objectManager->getObject('\Getfinancing\Getfinancing\Model\Getfinancing');
+        $test1 = $model->getOrderPlaceRedirectUrl();
+        $test2 = $model->getCartDataByInv_id();
+        echo "\n -----------"; 
+        print_r($test1);
+        echo "\n -----------"; 
+        print_r($test2);
+        echo "\n -----------"; 
+        /*$page = $this->_objectManager->getObject("\Getfinancing\Getfinancing\Controller\Getfinancing\Notification");
         $res = $page->execute();
-        echo "RES IS\n"; print_r($page);
+        echo "RES IS\n"; print_r($page); */
         $this->assertFalse(false); 
     }
 

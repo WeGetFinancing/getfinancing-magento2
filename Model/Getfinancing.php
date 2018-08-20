@@ -166,6 +166,7 @@ class Getfinancing extends \Magento\Payment\Model\Method\AbstractMethod
         $tablename = $connection->getTableName('getfinancing');
         $sql = $connection->select()->from($tablename, 'order_id')->where('merchant_transaction_id=?', $merchant_transaction_id);
         $order = $connection->fetchRow($sql);
+        error_log ("\n order data from DB: ". print_r($order, 1), 3, '/tmp/log');
         return $order['order_id'];
     }
 

@@ -1,3 +1,7 @@
+
+This repo has been archived, please use the new: https://github.com/WeGetFinancing/magento-checkout-plugin for up to date versions of the Adobe Commerce / Magento integration.
+
+
 General Instructions
 -----------------------------
 1. Create your merchant account to offer monthly payment options to your consumers directly on your ecommerce from here (http://www.getfinancing.com/signup) if you haven't done it yet.

@@ -1,10 +1,9 @@
 <?php
 /**
  * Getfinancing_Getfinancing payment form
-
- * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author	   Yameveo <yameveo@yameveo.com>
+* @package    Getfinancing_Getfinancing
+ * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
+ * @author	   Getfinancing <services@getfinancing.com>
  */
 
 namespace Getfinancing\Getfinancing\Block;
@@ -18,10 +17,7 @@ class Notification extends \Magento\Framework\View\Element\Template
 {
     /**
      * @var \Magento\Checkout\Model\Session
-     */
-//    protected $_checkoutSession;
-
-    /**
+     *
      * @var \Magento\Sales\Model\OrderFactory
      */
     protected $_orderFactory;
@@ -39,7 +35,7 @@ class Notification extends \Magento\Framework\View\Element\Template
      */
     protected $orderSender;
 
-    protected $_pagantis;
+    protected $_gfModel;
 //    protected $_customerRepository;
 
     /**
@@ -52,18 +48,16 @@ class Notification extends \Magento\Framework\View\Element\Template
     public function __construct(
         \Magento\Framework\View\Element\Template\Context $context,
         \Magento\Framework\App\Http\Context $httpContext,
-        \Getfinancing\Getfinancing\Model\Getfinancing $pagantis,
+        \Getfinancing\Getfinancing\Model\Getfinancing $getfinancing,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         OrderSender $orderSender,
-
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->_isScopePrivate = true;
         $this->httpContext = $httpContext;
-        $this->_pagantis = $pagantis;
+        $this->_gfModel = $getfinancing;
         $this->_orderFactory = $orderFactory;
-        $this->_logger = $context->getLogger();
         $this->orderSender = $orderSender;
     }
 
@@ -72,47 +66,29 @@ class Notification extends \Magento\Framework\View\Element\Template
      *
      * @return string
      */
+    
     protected function _beforeToHtml()
     {
         $this->prepareBlockData();
         return parent::_beforeToHtml();
     }
+    
 
     /**
      * Prepares FORM Data to send to gateway
      *
      * @return void
      */
+    
     protected function prepareBlockData()
-    {
-
-        /*$orderId = '000000006';
-        $data['id'] = 'XXXXXXXXXXXXXX';
-        $temp = json_decode('{"event":"charge.created","api_version":"1.0","account_id":"tk_1234567890","signature":"25cf7709d9d4e54d985e97603b93f213f747614e","data": { "livemode": true, "paid": true, "amount": 1000, "currency": "EUR", "refunded": true, "captured": true, "authorization_code": "12345678", "error_code": null, "error_message": null, "order_id": "000000006", "description": "Descripción del cargo", "custom_fields": null, "amount_in_eur": 1000, "exchange_rate_eur": 1, "source": "web", "ip": "0.0.0.0", "locale": "es", "fee": null, "interchange_fee": null, "settlement": null, "created_at": "2014-06-24T15:30:00.000Z", "id": "cha_1234567890abcdefg" }}',true);
-        */
-
-        $json = file_get_contents('php://input');
+    { // THIS FILE IS NEVER CALLED, we finish in controller with setBody method to show text
+        
+        $json = file_get_contents('php://input'); // Receive the postback data
         $temp = json_decode($json,true);
-        $debug = $this->_pagantis->getDebug();
-
-        if($debug){
-            $this->_logger->debug('GETFINANCING - Starting order update');
-        }
 
         $merchant_transaction_id = $temp['merchant_transaction_id'];
+        $orderId = $this->_gfModel->getOrderIdByMerchantTransactionId($merchant_transaction_id);
 
-
-        $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
-        ->get('Magento\Framework\App\ResourceConnection');
-        $connection= $this->_resources->getConnection();
-
-        $tablename = $this->_resources->getTableName('getfinancing');
-        $sql = $connection->select()->from($tablename, 'order_id')->where('merchant_transaction_id=?', $merchant_transaction_id);
-        $order = $connection->fetchRow($sql);
-        $orderId = $order['order_id'];
-        if($debug){
-            $this->_logger->debug('GETFINANCING - Order located is ORDER #'.$orderId);
-        }
         $order = $this->_orderFactory->create()->loadByIncrementId($orderId);
 
         $this->_order = $order;
@@ -121,20 +97,13 @@ class Notification extends \Magento\Framework\View\Element\Template
         
 
         if ($order->getId()) {
-          $this->_logger->debug('GETFINANCING - getID');
             switch ($temp['updates']['status']) {
                 case 'approved':
-                    if($debug){
-                        $this->_logger->debug('GETFINANCING - approved');
-                    }
                     $payment->setLastTransId($orderId);
                     $order->save();
                     $this->_processOrder();
                     break;
                 case 'rejected':
-                    if($debug){
-                        $this->_logger->debug('PAGANTIS - charge.failed');
-                    }
                     //we only set order as cancelled if it is not completed yet.
                     if ($order->getStatus() != order::STATE_COMPLETE ){
                       $payment->setLastTransId($orderId);
@@ -148,26 +117,17 @@ class Notification extends \Magento\Framework\View\Element\Template
     }
 
     private function _processOrder() {
-        $debug = $this->_pagantis->getDebug();
-
-        if($debug){
-            $this->_logger->debug('GETFINANCING - Processing order');
-        }
-
         $order = $this->_order;
         $payment = $this->_payment;
 
-        $sendMail = $this->_pagantis->getSendEmail();
-        $createInvoice = $this->_pagantis->getCreateInvoice();
+        $sendMail = $this->_gfModel->getSendEmail();
+        $createInvoice = $this->_gfModel->getCreateInvoice();
 
 
 
         if($order->getId() && !$order->canInvoice() && $createInvoice) {
             return;
         } else {
-            if($debug){
-                $this->_logger->debug('GETFINANCING - creating invoice');
-            }
             $order->setState(order::STATE_COMPLETE);
             $order->setStatus(order::STATE_COMPLETE);
             $invoice = $order->prepareInvoice();
@@ -176,9 +136,6 @@ class Notification extends \Magento\Framework\View\Element\Template
             $order->save();
         }
          if (!$order->getEmailSent() && $sendMail) {
-             if($debug){
-                 $this->_logger->debug('GETFINANCING - sending email to customer');
-             }
             $this->orderSender->send($this->_order);
             $this->_order->addStatusHistoryComment(
                 __('Client notified with order #%1.', $order->getId())

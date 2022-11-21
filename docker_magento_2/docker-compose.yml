@@ -12,6 +12,8 @@ services:
       - "8280:80"
     env_file:
       - ./magento_2/env
+    volumes: 
+      - ./app:/var/www/html/
     depends_on:
       - gf_mage2_db
     networks:

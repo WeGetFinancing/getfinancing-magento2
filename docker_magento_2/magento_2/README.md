@@ -76,3 +76,17 @@ DESTROY AND RECREATE:
 
 If we already have the image and want to **delete**, **recreate it and start** it again (**this will not destroy the Mysql database**):
 docker stop gf_mage2_http; docker rm gf_mage2_http; make build TARGET="magento_2"; make start TARGET="magento_2"
+
+Run the containers 
+=
+
+`docker network create gf_mage2_net` \
+`docker run -d -p 3306 --net=gf_mage2_net --name gf_mage2_db getfinancingdockerhub/gf_mage2_db` \
+`docker run -d -p 8280:80 --net=gf_mage2_net --name gf_mage2_http getfinancingdockerhub/gf_mage2_http` \
+`docker exec -it gf_mage2_http php ./bin/magento deploy:mode:set developer`
+
+## In Development:
+Use `make override_with_dev` to override app\vendor\getfinancing with getfinancing files from git (in this way you can work with git files and override installed files easily)\
+For development can be useful make a `watch make override_with_dev` to automatically override the plugin installation files.
+
+

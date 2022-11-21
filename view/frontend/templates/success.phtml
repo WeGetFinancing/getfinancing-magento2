@@ -1,1 +1,78 @@
-<p><?php echo 'Thank you for your order.'; ?></p>
+<?php 
+$cartData = $this->getData('cartData');
+$GfForm = $this->getData('GfForm'); ?>
+<h1>
+    Than you for chossing GetFinancing as payment provider!
+</h1>
+<p>
+<?php 
+
+if (isset($cartData[0])): ?>
+        <?php 
+            $cartData = $cartData[0];
+            $orderData = json_decode($cartData["order_data"], 1);
+            $clientName = "";
+        if (isset($orderData["gf_data"]) && isset($orderData["gf_data"]["first_name"])):
+            $clientName = $orderData["gf_data"]["first_name"]; 
+        endif; 
+            echo '<div><h2>'. $clientName; 
+        ?>
+                
+                    Your order is on hold while you are in the process of being approved for financing with the lender of your choice.
+                </h2>
+                <h2>
+                    Please wait until this process finishes.
+                </h2>
+            </div>
+
+        <?php
+        if (isset($cartData["merchant_transaction_id"])):
+        ?>
+        <span style="padding-top: 10px">
+            Transaction ID: <strong><?php echo $cartData["merchant_transaction_id"]; ?></strong>
+        </span>
+        <?php
+        endif; 
+        if (isset($cartData["order_data"])):
+            $totalPrice = 0;
+            $orderData = json_decode ($cartData["order_data"], 1);
+            if (isset ($orderData["gf_response"]) && isset ($orderData["gf_response"]["inv_id"])): ?>
+            <span>
+                GetFinancing order ID: <strong><?php echo $orderData["gf_response"]["inv_id"]; ?></strong>
+            </span>
+            <?php
+            endif; 
+
+            if (isset($orderData["gf_data"]) && isset($orderData["gf_data"]["cart_items"])): ?>
+                <h2>Cart Details: </h2>
+            <?php
+                    foreach ($orderData["gf_data"]["cart_items"] as $i): ?>
+                        <div style="border-bottom: 1px solid black; padding: 10px 0;">
+                            <div>SKU: <strong><?php echo $i["sku"]; ?></strong></div>
+                            <div>Item: <strong><?php echo $i["quantity"]." X ".$i["display_name"]; 
+                                $totalPrice+= $i["quantity"]*$i["unit_price"];
+                            ?></strong></div>
+                            <div>Unit price : $ <strong><?php echo $i["unit_price"]; ?></strong></div>
+                            <?php if ($i["unit_tax"] > 0): ?>
+                                <div>Product Tax: $ <strong><?php echo $i["unit_tax"]; ?></strong></div>
+                            <?php endif; ?>
+                        </div>
+                    <?php
+                    endforeach;
+            endif; 
+            if ($orderData["gf_data"]["shipping_amount"]>0): ?>
+                <div>
+                    Shipping Amount: $ <strong><?php echo $orderData["gf_data"]["shipping_amount"]; ?></strong>
+                </div>
+        <?php
+            endif; 
+            if ($totalPrice > 0): ?>
+                <div style="padding-top: 10px; ">
+                    Total Price: $ <strong><?php echo $totalPrice+$orderData["gf_data"]["shipping_amount"]; ?></strong>
+                </div>
+            <?php
+            endif;
+        endif; 
+        ?>
+<?php 
+endif; 

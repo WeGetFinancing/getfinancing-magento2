@@ -1,13 +1,6 @@
 <?xml version="1.0"?>
-<!--
-/**
- * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author	   Yameveo <yameveo@yameveo.com>
- */
--->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
-    <module name="Getfinancing_Getfinancing" setup_version="1.0.7" schema_version="1.0.7">
+    <module name="Getfinancing_Getfinancing" setup_version="1.0.8" schema_version="1.0.8">
         <sequence>
             <module name="Magento_Sales"/>
             <module name="Magento_Payment"/>

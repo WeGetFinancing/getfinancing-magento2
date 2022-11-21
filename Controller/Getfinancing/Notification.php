@@ -1,17 +1,20 @@
 <?php
 /**
- * Getfinancing_Getfinancing payment form
+ * Getfinancing_Getfinancing Receive Postbacks from GF and update orders
  * @package    Getfinancing_Getfinancing
- * @copyright  Copyright (c) 2016 Yameveo (http://www.yameveo.com)
- * @author       Yameveo <yameveo@yameveo.com>
+ * @copyright  Copyright (c) 2018 Getfinancing (http://www.getfinancing.com)
+ * @author	   Getfinancing <services@getfinancing.com>
  */
-
 
 namespace Getfinancing\Getfinancing\Controller\Getfinancing;
 
 class Notification extends \Magento\Framework\App\Action\Action
 {
     protected $resultPageFactory;
+    protected $_gfModel;
+    protected $om; // Object Manager
+    protected $_orderId;
+    protected $orderSender;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -21,6 +24,11 @@ class Notification extends \Magento\Framework\App\Action\Action
     {
         $this->resultPageFactory = $resultPageFactory;
         parent::__construct($context);
+        $this->om = \Magento\Framework\App\ObjectManager::getInstance();
+        $gfModel = $this->om->get('\Getfinancing\Getfinancing\Model\Getfinancing');
+        $this->_gfModel = $gfModel; // set GetFinancing Model
+        $this->orderSender = $this->om->get('Magento\Sales\Model\Order\Email\Sender\OrderSender');
+        //$client = new Raven_Client('https://ab22360f77e34a81a9f444f8b15a38ab@sentry.getfinancing.us/5');
     }
 
     public function execute()
@@ -29,31 +37,23 @@ class Notification extends \Magento\Framework\App\Action\Action
         $post = json_decode($rawData);
         $orderStatus = $post->updates->status;
         $merchantTransactionId = $post->merchant_transaction_id;
-        
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $getFinancingModel = $objectManager->get('\Getfinancing\Getfinancing\Model\Getfinancing');
 
-        if ($orderStatus != 'rejected' || $getFinancingModel->getDeleteCancelledOrders() == 0) {
-            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-            $orderFactory = $objectManager->get('\Magento\Sales\Model\OrderFactory');
-            $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-            $quoteFactory = $objectManager->create('\Magento\Quote\Model\QuoteFactory');
-            
-            $this->_resources = \Magento\Framework\App\ObjectManager::getInstance()
-            ->get('Magento\Framework\App\ResourceConnection');
-            $connection= $this->_resources->getConnection();
-            $tablename = $this->_resources->getTableName('getfinancing');
-            $sql = $connection->select()->from($tablename)
-                            ->where('merchant_transaction_id = ?', $merchantTransactionId);
-            $result = $connection->fetchAll($sql);
-            $quoteId = (int)$result[0]['order_id']; // This is the quote ID, with it we get the order (if order exists)
+        error_log ("\n ------------- \n: ".print_r('got status', 1), 3, '/tmp/log');
 
+        if ($this->_gfModel->getDeleteCancelledOrders() == 0 || $orderStatus != 'rejected') {
+            $orderFactory = $this->om->get('\Magento\Sales\Model\OrderFactory');
+            $quoteFactory = $this->om->create('\Magento\Quote\Model\QuoteFactory');
+            $quoteId = $this->_gfModel->getOrderIdByMerchantTransactionId($merchantTransactionId);
             $q = $quoteFactory->create()->load($quoteId); // Get the quote to have the order data
-            $orderId = $q->GetReservedOrderId();
-            $orderF = $orderFactory->create()->loadByIncrementId($orderId);
-
-            #$orderF = $orderFactory->create()->load($orderId); // Get the order data (if exists)
+            $this->_orderId = $q->GetReservedOrderId();
+            $orderF = $orderFactory->create()->loadByIncrementId($this->_orderId);
+            #$orderF = $orderFactory->create()->load($this->_orderId); // Get the order data (if exists)
             $isEmptyOrder = empty($orderF->getData())?true:false; // Check if order already exists
+
+            error_log ("\n quoteId: ".$quoteId, 3, '/tmp/log');
+            error_log ("\n this->_order_id: ".$this->_orderId, 3, '/tmp/log');
+            error_log ("\n orderF: ".$orderF->getEntityId(), 3, '/tmp/log');
+            error_log ("\n isEmptyOrder: ".($isEmptyOrder?' empty ':' full order'), 3, '/tmp/log');
 
             if ($isEmptyOrder) { // The order doesn't exist (create it from the quote)
                 $q->getPayment()->setMethod('getfinancing_gateway');
@@ -61,23 +61,19 @@ class Notification extends \Magento\Framework\App\Action\Action
                 $quoteManagement = $this->_objectManager->create('\Magento\Quote\Api\CartManagementInterface');
                 $orderF = $quoteManagement->submit($q); // Create the order  
             }
-            $newOrderStatus = $this->mapOrderStatus($orderStatus);
-            $order = $this->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus, $orderStatus);
+            $newOrderStatus = $this->mapOrderStatus($orderStatus); // Only manage some statuses
+            $order = $this->_gfModel->updateOrderStatus ($orderF->getEntityId(), $newOrderStatus);
+            if ($newOrderStatus == \Magento\Sales\Model\Order::STATE_COMPLETE) {
+                $newStatus = $this->_processOrder(); // Notify user by Email and create invoice, only if status is COMPLETED
+            }            
+            $this->getResponse()->setBody('ok'); // We don't wan to call Block, just return text
         }
-        $this->getResponse()->setBody('ok');
-    }
-
-    public function updateOrderStatus ($orderId, $orderStatus) {
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $order = $objectManager->create('\Magento\Sales\Model\Order')->load($orderId);
-        $order->setState($orderStatus)->setStatus($orderStatus);
-        $order->save();
-        return $order;
+        $this->getResponse()->setBody('cancel, unused status'); // We didn't applly anythinf if we reach this point, so say cancel
     }
 
     public function mapOrderStatus ($s) {
         switch (strtolower($s)) {
-            case "preapproved":
+            case "preapproved": 
                 $s = \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT;
                 break;
             case "refund":
@@ -85,11 +81,36 @@ class Notification extends \Magento\Framework\App\Action\Action
                 $s = \Magento\Sales\Model\Order::STATE_CANCELED;
                 break;
             case "approved":
-                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
+                $s = \Magento\Sales\Model\Order::STATE_COMPLETE;
                 break;
-            default:
-                $this->getResponse()->setBody('error, status doesnt exist');
+            default: // If we don't know the status, use processing
+                $s = \Magento\Sales\Model\Order::STATE_PROCESSING;
         }
        return $s;
+    }
+
+    private function _processOrder() { // This method was in \Block\Notification.php but that file is not in use any more
+        $order = $this->om->create('\Magento\Sales\Model\Order')->load($this->_orderId);
+        $payment = $order->getPayment();
+        $sendMail = $this->_gfModel->getSendEmail();
+        $createInvoice = $this->_gfModel->getCreateInvoice();
+        //if($order->getId() && !$order->canInvoice() && $createInvoice) {  
+        if ($createInvoice) {
+            $invoice = $order->prepareInvoice();
+            $invoice->register();
+            $order->addRelatedObject($invoice);
+            $order->save();
+        }
+
+        if (!$order->getEmailSent() && $sendMail) {
+            // Only send emails when send emails is set in backoffice configuration and email was not sent yet
+            $this->orderSender->send($order);
+            $order->addStatusHistoryComment(
+                __('Client notified with order #%1.', $order->getId())
+            )->setIsCustomerNotified(
+                true
+            )->save();
+        }
+
     }
 }
